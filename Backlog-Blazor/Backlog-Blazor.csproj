@@ -37,7 +37,7 @@
     </ItemGroup>
 
     <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-      <Exec Command="tailwindcss -i ./Styles/input.css -o ./wwwroot/css/styles.css" />
+      <Exec Command="$(ProjectDir)/tailwindcss -i ./Styles/input.css -o ./wwwroot/css/styles.css" />
     </Target>
 
 </Project>
