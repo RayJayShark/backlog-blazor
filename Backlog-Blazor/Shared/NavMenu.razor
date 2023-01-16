@@ -1,36 +1,37 @@
-﻿<div>
-    <div>
-        <a href="">Backlog-Blazor</a>
-        <button title="Navigation menu" @onclick="ToggleNavMenu">
-            <span></span>
-        </button>
-    </div>
-</div>
+﻿@using BacklogBlazor.Icons
 
-<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
-    <nav>
-        <div>
-            <NavLink href="" Match="NavLinkMatch.All">
-                <span aria-hidden="true"></span> Home
-            </NavLink>
+<nav class="bg-amber-500">
+    @* Top Bar *@
+    <div class="mx-auto px-6">
+        <div class="flex h-12 items-center justify-between">
+            <button class="items-center justify-start" @onclick="ToggleNavMenu">
+                <HeroIcons Icon="HeroIcons.HeroIcon.Bars3_Outline"/>
+            </button>
+            <div class="justify-center">
+                <a>GameLog</a>
+            </div>
+            <div class="right-0">
+                <button class="flex items-center rounded-full hover:opacity-50">
+                    <img alt="Profile Avatar" src="icon-192.png" class="rounded-full h-10 w-10"/> @* TODO: temporary profile avatar *@
+                    <div class="absolute flex items-center justify-center h-10 w-10 rounded-full opacity-0 hover:opacity-100">
+                        <HeroIcons Icon="HeroIcons.HeroIcon.AdjustmentsHorizontal_Solid" Class="absolute"/>
+                    </div>
+                </button>
+            </div>
         </div>
-        <div>
-            <NavLink href="counter">
-                <span aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-        <div>
-            <NavLink href="fetchdata">
-                <span aria-hidden="true"></span> Fetch data
-            </NavLink>
-        </div>
-    </nav>
-</div>
+    </div>
+    
+    @* Left Bar *@
+    <div class="flex items-center justify-start my-0 mx-auto px-6 h-16 bg-amber-300 @NavMenuCssClass">
+        <div class="px-10">Test1</div>
+        <div class="px-10">Test2</div>
+    </div>
+</nav>
 
 @code {
     private bool collapseNavMenu = true;
 
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private string? NavMenuCssClass => collapseNavMenu ? "hidden" : null;
 
     private void ToggleNavMenu()
     {
