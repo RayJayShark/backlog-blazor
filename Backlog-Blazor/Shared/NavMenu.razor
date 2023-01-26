@@ -11,7 +11,7 @@
                 <a>GameLog</a>
             </div>
             <div class="right-0">
-                <button class="flex items-center rounded-full hover:opacity-50">
+                <button class="flex items-center rounded-full hover:opacity-50" @onclick="TempNavigateToLogin">
                     <img alt="Profile Avatar" src="icon-192.png" class="rounded-full h-10 w-10"/> @* TODO: temporary profile avatar *@
                     <div class="absolute flex items-center justify-center h-10 w-10 rounded-full opacity-0 hover:opacity-100">
                         <HeroIcons Icon="HeroIcons.HeroIcon.AdjustmentsHorizontal_Solid" Class="absolute"/>
@@ -33,9 +33,17 @@
 
     private string? NavMenuCssClass => collapseNavMenu ? "hidden" : null;
 
+    [Inject] 
+    private NavigationManager Nav { get; set; }     
+
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+           
+    private void TempNavigateToLogin()
+    {
+        Nav.NavigateTo("/login");
     }
 
 }

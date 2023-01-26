@@ -1,6 +1,7 @@
 .idea
 .vs
 .vscode
+.env
 */obj/
 */bin
 styles.css

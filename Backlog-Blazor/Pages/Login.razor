@@ -1,0 +1,121 @@
+﻿@using BacklogBlazor_Shared.Models.Authentication
+@using BacklogBlazor.Services
+@using System.Net
+@inject HttpClient Client
+@page "/login"
+
+<div class="mx-auto px-4 py-6 max-w-md border rounded-md drop-shadow-md">
+    <h3 class="font-bold text-xl mb-10">Login</h3>
+
+    @if (_displayLoginError)
+    {
+        <div class="p-4 mb-4 bg-red-300 text-red-900 font-semibold rounded">
+            @_loginError
+        </div>
+    }
+   
+    <EditForm Model="_loginRequest" OnValidSubmit="AttemptLogin">
+        <DataAnnotationsValidator/>
+        
+        <div class="flex flex-col space-y-16">
+            <div class="flex flex-col">
+                <label>Email:</label>
+                <InputText @bind-Value="_loginRequest.Email" class="px-2 py-2 border-2 rounded-md"/>
+                <FormValidationMessage For="() => _loginRequest.Email"/>
+            </div>
+
+            <div class="flex flex-col">
+                <label>Password:</label>
+                <InputText type="password" @bind-Value="_loginRequest.Password" class="px-2 py-2 border-2 rounded-md"/>
+                <FormValidationMessage For="() => _loginRequest.Password"/>
+                <div class="flex flex-row justify-start mt-4">
+                    <InputCheckbox @bind-Value="@_rememberMe" class="mx-2" />
+                    <div>Remember Me</div>
+                </div>
+            </div>
+
+            <div class="flex flex-row justify-between">
+                <button type="submit" disabled="@_disableButton" class="w-fit h-10 px-6 rounded-lg bg-amber-500 enabled:hover:bg-amber-300 disabled:opacity-75">Login</button>
+                <button type="button" class="w-fit text-amber-700 hover:font-semibold" @onclick="NavigateToRegister">Need to register?</button>
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Inject] private NavigationManager Nav { get; set; }
+    [Inject] private AuthorizedApiService AuthApiService { get; set; }
+    [Inject] private SessionService SessionService { get; set; }
+    [Inject] private LocalService LocalService { get; set; }
+    
+    private readonly LoginRequest _loginRequest = new();
+    private bool _rememberMe = false;
+    private string _loginError;
+    private bool _displayLoginError = false;
+    private bool _disableButton = false;
+
+    private async Task AttemptLogin()
+    {
+        _disableButton = true;
+        _displayLoginError = false;
+
+        HttpResponseMessage response = new();
+        try
+        {
+            response = await Client.PostAsJsonAsync("/auth/login", _loginRequest);
+        }
+        catch (Exception ex)
+        {
+            _loginError = "Unable to connect to server";
+            _displayLoginError = true;
+            _disableButton = false;
+            return;
+        }
+        
+        if (response.StatusCode == HttpStatusCode.InternalServerError)
+        {
+            _loginError = "There was an unknown error while attempting login";
+            _displayLoginError = true;
+            _disableButton = false;
+            return;
+        }
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            _loginError = "Invalid email or password";
+            _displayLoginError = true;
+            _disableButton = false;
+            return;
+        }
+
+        var jwtToken = await response.Content.ReadAsStringAsync();
+
+        if (string.IsNullOrEmpty(jwtToken))
+        {
+            _loginError = "Error communicating with server";
+            _displayLoginError = true;
+            _disableButton = false;
+            return;
+        }
+        
+        if (!AuthApiService.SetBearerToken(jwtToken))
+        {
+            //Bad JWT token error
+            _loginError = "Unable to authenticate";
+            _displayLoginError = true;
+            _disableButton = false;
+            return;
+        }
+        
+        await SessionService.SetJwtTokenAsync(jwtToken);
+
+        if (_rememberMe)
+        {
+            await LocalService.SetJwtTokenAsync(jwtToken);
+        }
+        
+        Nav.NavigateTo("/");
+    }
+
+    private void NavigateToRegister() => Nav.NavigateTo("/register");
+}

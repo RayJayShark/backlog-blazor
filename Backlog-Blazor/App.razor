@@ -1,4 +1,11 @@
-﻿<Router AppAssembly="@typeof(App).Assembly">
+﻿@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+
+<HeadContent>
+    @*<link href="css/styles.css?@(Configuration["BuildNumber"])" rel="stylesheet" />*@
+    <link href="css/styles.css?@(DateTime.Now.ToString("O"))" rel="stylesheet" />
+</HeadContent>
+<Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
         <FocusOnNavigate RouteData="@routeData" Selector="h1"/>

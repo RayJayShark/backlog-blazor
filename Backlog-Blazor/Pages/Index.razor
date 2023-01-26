@@ -1,8 +1,17 @@
-﻿@page "/"
+﻿@inject AuthorizedApiService AuthApiService
+@page "/"
+@using BacklogBlazor.Services
 
 <PageTitle>Index</PageTitle>
 
-<div class="text-sm">Hello, worldtest!</div>
+@if (AuthApiService.User is not null && AuthApiService.User.IsAuthenticated)
+{
+    <div class="text-sm">Hello, @AuthApiService.User.Username!</div>
+}
+else
+{
+    <div class="text-sm">Hello, world!</div>
+}
 
 Welcome to your new app.
 
