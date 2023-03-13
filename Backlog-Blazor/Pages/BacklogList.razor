@@ -1,0 +1,94 @@
+﻿@page "/backlog/list"
+@using BacklogBlazor.Services
+@using BacklogBlazor_Shared.Models
+@using System.Net
+
+<div class="text-3xl font-bold mx-2 mt-6 mb-10">Your Backlogs</div>
+
+<div class="flex flex-col gap-y-6">
+    @if (_loading)
+    {
+        
+        <div>Loading...</div>
+    }
+    else if (!_backlogs.Any())
+    {
+        <div>You have no backlogs! <button type="button" @onclick="CreateNewBacklog">Wanna create one?</button></div>
+    }
+    else
+    {
+        foreach (var backlog in _backlogs)
+        {
+            <button class="flex flex-row gap-x-4 group w-[700px] items-center p-3 bg-slate-100 border border-slate-300 rounded-md divide-x-2 divide-slate-800 drop-shadow-md hover:drop-shadow-lg hover:bg-slate-50" @onclick="() => NavigateToBacklog(backlog.Id)">
+                <div class="h-[7.5rem] px-4 w-1/3 self-center">
+                    <div class="h-2/5 text-xl font-bold">@backlog.Name</div>
+                    <div class="h-3/5 text-sm text-left break-normal text-ellipsis overflow-hidden">@backlog.Description</div>
+                </div>
+                <div class="h-[7.5rem] px-6 text-left">
+                    <div class="font-semibold">Games:</div>
+                    <ol class="list-decimal">
+                        @foreach (var game in backlog.Games.Take(3))
+                        {
+                            <li>@game.Name</li>
+                        }
+                        @if (backlog.Games.Count > 3)
+                        {
+                            <div class="-ml-3">... and @(backlog.Games.Count - 3) more!</div>
+                        }
+                    </ol>
+                </div>
+            </button>
+        }
+    }
+</div>
+
+@code {
+    [Inject] private AuthorizedApiService AuthorizedApiService { get; set; }
+    [Inject] private NavigationManager Nav { get; set; }
+    [Inject] private NotificationService NotificationService { get; set; }
+
+    private List<BacklogModel> _backlogs = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthorizedApiService.RequireAuthentication(Nav))
+            return;
+
+        try
+        {
+            _backlogs = await AuthorizedApiService.GetUserBacklogs();
+        }
+        catch (HttpRequestException ex)
+        {
+            switch (ex.StatusCode)
+            {
+                case HttpStatusCode.InternalServerError:
+                    await NotificationService.DisplayNotification("Error retrieving backlogs: Server error", NotificationLevel.Error);
+                    break;
+                case HttpStatusCode.Forbidden:
+                    await NotificationService.DisplayNotification("Error retrieving backlog: Invalid user. Try logging in!", NotificationLevel.Error);
+                    break;
+                default:
+                    await NotificationService.DisplayNotification("Error retrieving backlog: Unable to connect to server", NotificationLevel.Error);
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.DisplayNotification("Error retrieving backlog: Unknown error", NotificationLevel.Error);
+        }
+
+        _loading = false;
+    }
+
+    private async Task CreateNewBacklog()
+    {
+        await AuthorizedApiService.CreateNewBacklog(Nav, NotificationService);
+    }
+
+    private async Task NavigateToBacklog(long backlogId)
+    {
+        Nav.NavigateTo($"backlog/{backlogId}");
+    }
+}

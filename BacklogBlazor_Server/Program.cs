@@ -14,7 +14,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton(new AuthDataService(Environment.GetEnvironmentVariable("SQL_CONN")));
+builder.Services.AddScoped<AuthDataService>(_ => new AuthDataService(Environment.GetEnvironmentVariable("SQL_CONN")));
+builder.Services.AddScoped<BacklogDataService>(_ => new BacklogDataService(Environment.GetEnvironmentVariable("SQL_CONN")));
+builder.Services.AddSingleton<HltbService>();
 
 builder.Services.AddCors(options =>
 {
@@ -27,8 +29,8 @@ builder.Services.AddAuthentication().AddJwtBearer(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("JWT_SECRET"))),
-        ValidateIssuer = true,
-        ValidateAudience = true,
+        ValidateIssuer = false,
+        ValidateAudience = false,
         RequireExpirationTime = true
     };
 });

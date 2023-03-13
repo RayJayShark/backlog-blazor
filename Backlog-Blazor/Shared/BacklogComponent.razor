@@ -1,0 +1,52 @@
+﻿@using BacklogBlazor_Shared.Models
+@using BacklogBlazor.Icons
+
+<div class="@Class">
+    <div class="flex flex-row justify-between">
+        <div class="flex flex-col">
+            <div class="px-2 pt-6 pb-2 text-3xl font-bold">@Backlog.Name</div>
+            <div class="px-6 pb-8 w-3/4 p-1 break-normal text-ellipsis overflow-hidden">@Backlog.Description</div>
+        </div>
+
+        @if (Backlog.IsOwner)
+        {
+            <button type="button" class="self-end pb-2" @onclick="() => EditClicked.InvokeAsync()"><HeroIcons Icon="HeroIcons.HeroIcon.PencilSquare_Solid"/></button>
+        }
+    </div>
+
+    <table class="border border-slate-400 border-separate border-spacing-0 bg-slate-50 rounded drop-shadow-md w-full">
+        <thead>
+        <tr class="divide-x divide-slate-400">
+            <th class="border-b border-slate-400 w-6">Rank</th>
+            <th class="border-b border-slate-400 w-1/2 min-w-[400px]">Game</th>
+            <th class="border-b border-slate-400 w-1/6">Estimated Hours</th>
+            <th class="border-b border-slate-400 w-1/6">Current Hours</th>
+            <th class="border-b border-slate-400 w-6">Completed?</th>
+        </tr>
+        </thead>
+        <tbody>
+        @if (!Backlog.Games.Any())
+        {
+            <tr>
+                <td colspan="5">This backlog is empty...</td>
+            </tr>
+        }
+        @foreach (var game in Backlog.Games)
+        {
+            <tr class="divide-x divide-slate-400">
+                <td class="border-b border-slate-400 text-center font-bold">@game.Rank</td>
+                <td class="border-b border-slate-400 px-2 py-1">
+                    <BacklogGame Game="game"/>
+                </td>
+                <td class="border-b border-slate-400 text-center font-bold">
+                    @game.EstimateCompleteHours
+                </td>
+                <td class="border-b border-slate-400 text-center font-bold">
+                    @game.CurrentHours
+                </td>
+                <td class="border-b border-slate-400 text-center font-bold"><InputCheckbox disabled="true" @bind-Value="@game.Completed"/></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

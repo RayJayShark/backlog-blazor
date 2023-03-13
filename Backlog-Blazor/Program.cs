@@ -13,6 +13,7 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<LocalService>();
 builder.Services.AddScoped<AuthorizedApiService>();
+builder.Services.AddScoped<NotificationService>();
 
 builder.Services.AddBlazoredSessionStorage();
 builder.Services.AddBlazoredLocalStorage();

@@ -1,0 +1,70 @@
+﻿@page "/backlog/{id:long}"
+@using BacklogBlazor_Shared.Models
+@using BacklogBlazor.Services
+@using System.Net
+
+@if (_loading)
+{
+    <div>Loading...</div>
+}
+else
+{
+    @if (Edit && _backlogModel.IsOwner)
+    {
+        <BacklogEdit Backlog="_backlogModel" DoneEditing="@(() => Edit = false)" Class="w-11/12"/>
+    }
+    else
+    {
+        @*TODO: Backlog without edit*@
+        <BacklogComponent Backlog="_backlogModel" EditClicked="@(() => Edit = true)"/>
+    }
+}
+
+@code {
+    [Parameter] 
+    public long Id { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public bool Edit { get; set; } = false;
+    
+    [Inject] private AuthorizedApiService AuthorizedApiService { get; set; }
+    [Inject] private NotificationService NotificationService { get; set; }
+
+    private BacklogModel _backlogModel = new BacklogModel();
+    private bool _loading = false;
+
+    protected override void OnInitialized()
+    {
+        GetBacklog();
+    }
+
+    private async Task GetBacklog()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        try
+        {
+            _backlogModel = await AuthorizedApiService.GetBacklog(Id);
+        }
+        catch (HttpRequestException ex)
+        {
+            switch (ex.StatusCode)
+            {
+                case HttpStatusCode.BadRequest:
+                    await NotificationService.DisplayNotification("Error retrieving backlog: Invalid backlog ID", NotificationLevel.Error);
+                    break;
+                case HttpStatusCode.InternalServerError:
+                    await NotificationService.DisplayNotification("Error retrieving backlog: Server error", NotificationLevel.Error);
+                    break;
+                default:
+                    await NotificationService.DisplayNotification("Error retrieving backlog: Unable to connect to server", NotificationLevel.Error);
+                    break;
+            }
+        }
+
+        _loading = false;
+        StateHasChanged();
+    }
+}

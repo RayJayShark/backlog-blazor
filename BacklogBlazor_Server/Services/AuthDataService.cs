@@ -91,4 +91,17 @@ public class AuthDataService
 
         return userId;
     }
+    
+    public async Task<bool> IsValidUser(long userId)
+    {
+        await _sqlConnection.OpenAsync();
+
+        var users = await _sqlConnection.QueryAsync<long?>(
+            "select UserId from user where UserId = @userId limit 1",
+            new { userId });
+
+        await _sqlConnection.CloseAsync();
+
+        return users is not null && users.Any();
+    }
 }

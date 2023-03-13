@@ -1,4 +1,6 @@
 ﻿@using BacklogBlazor.Icons
+@using BacklogBlazor.Services
+@using System.Net
 
 <nav class="bg-amber-500">
     @* Top Bar *@
@@ -21,10 +23,21 @@
         </div>
     </div>
     
-    @* Left Bar *@
+    @* Under Bar *@
     <div class="flex items-center justify-start my-0 mx-auto px-6 h-16 bg-amber-300 @NavMenuCssClass">
-        <div class="px-10">Test1</div>
-        <div class="px-10">Test2</div>
+        @if (AuthorizedApiService.User.IsAuthenticated)
+        {
+            <button type="button" title="Create New Backlog" @onclick="CreateNewBacklog">
+                <HeroIcons Icon="HeroIcons.HeroIcon.Plus_Outline" Class="p-1 drop-shadow border rounded-md border-slate-700 bg-amber-500 hover:bg-amber-600 hover:border-2 hover:drop-shadow-md"/>
+            </button>
+            <div class="px-10">Test1</div>
+            <div class="px-10">Test2</div>
+            <NavLink href="backlog/list">Your Backlogs</NavLink>
+        }
+        else
+        {
+            <div>Please login...</div>
+        }
     </div>
 </nav>
 
@@ -34,11 +47,34 @@
     private string? NavMenuCssClass => collapseNavMenu ? "hidden" : null;
 
     [Inject] 
-    private NavigationManager Nav { get; set; }     
+    private NavigationManager Nav { get; set; }    
+    
+    [Inject]
+    private AuthorizedApiService AuthorizedApiService { get; set; }
+    
+    [Inject]
+    private NotificationService NotificationService { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += CloseNavMenu;
+    }
 
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+        StateHasChanged();
+    }
+
+    private void CloseNavMenu(object? sender, LocationChangedEventArgs locationChangedEventArgs)
+    {
+        collapseNavMenu = true;
+        StateHasChanged();
+    }
+
+    private async Task CreateNewBacklog()
+    {
+        await AuthorizedApiService.CreateNewBacklog(Nav, NotificationService);
     }
            
     private void TempNavigateToLogin()

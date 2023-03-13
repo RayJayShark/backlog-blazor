@@ -1,0 +1,28 @@
+﻿@using BacklogBlazor_Shared.Models
+<div class="@Class">
+    <div class="flex flex-row items-center space-x-4">
+        <div class="group">
+            @*<img alt="@(select_context.Name + " Cover")" src="@select_context.GameImageUrl" class="relative w-8 z-50 transition-all duration-200 border border-slate-500 border-opacity-90 rounded hover:scale-[7]"/>*@
+            <img alt="@(Game.Name + " Cover")" src="@Game.GameImageUrl" class="w-8"/>
+            <div class="absolute flex flex-row items-center drop-shadow-md space-x-0 translate-x-10 -translate-y-[56%] z-50 transition-all duration-300 invisible opacity-0 group-hover:opacity-100 group-hover:visible">
+                <div class="w-0 h-0 border-y-8 border-y-transparent border-r-[15px] border-r-slate-500 border-opacity-90"/>
+                <div class="p-3 bg-slate-500/90 rounded-md">
+                    <img alt="@(Game.Name + " Cover Enlarged")" src="@(@Game.GameImageUrl + "?width=250")"/>
+                </div>
+            </div>
+        </div>
+        <div class="font-bold">@Game.Name</div>
+        <div class="font-extrabold pb-1 scale-y-[2]">|</div>
+        <div>Main: @Game.CompleteMainTime.TotalHours.ToString("0.0")</div>
+        <div>Main+: @Game.CompletePlusTime.TotalHours.ToString("0.0")</div>
+        <div>100%: @Game.Complete100Time.TotalHours.ToString("0.0")</div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Game Game { get; set; }
+    
+    [Parameter]
+    public string Class { get; set; }
+}
