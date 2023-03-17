@@ -1,6 +1,7 @@
 using System.Text;
 using BacklogBlazor_Server.Services;
 using dotenv.net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,6 +34,34 @@ builder.Services.AddAuthentication().AddJwtBearer(options =>
         ValidateAudience = false,
         RequireExpirationTime = true
     };
+});
+
+builder.Services.AddAuthentication().AddJwtBearer("Refresh", options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey =
+            new SymmetricSecurityKey(Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("REFRESH_SECRET"))),
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        RequireExpirationTime = true
+    };
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.DefaultPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .RequireClaim("userId")
+        .AddAuthenticationSchemes("Bearer")
+        .Build();
+
+    options.AddPolicy("Refresh", new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .RequireClaim("userId")
+        .AddAuthenticationSchemes("Refresh")
+        .Build());
 });
 
 var app = builder.Build();

@@ -84,9 +84,9 @@
             return;
         }
         
-        var jwtToken = await response.Content.ReadAsStringAsync();
+        var tokenModel = await response.Content.ReadFromJsonAsync<TokenModel>();
 
-        if (string.IsNullOrEmpty(jwtToken))
+        if (string.IsNullOrWhiteSpace(tokenModel.JwtToken) || string.IsNullOrWhiteSpace(tokenModel.RefreshToken))
         {
             _registerError = "Error communicating with server";
             _displayRegisterError = true;
@@ -94,7 +94,7 @@
             return;
         }
         
-        if (!AuthApiService.SetBearerToken(jwtToken))
+        if (!AuthApiService.SetBearerToken(tokenModel, false))
         {
             //Bad JWT token error
             _registerError = "Unable to authenticate";
@@ -103,7 +103,6 @@
             return;
         }
         
-        SessionService.SetJwtTokenAsync(jwtToken);
         Nav.NavigateTo("/");
     }
     

@@ -2,7 +2,9 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Authentication;
 using BacklogBlazor_Shared.Models;
+using BacklogBlazor_Shared.Models.Authentication;
 using BacklogBlazor.Models;
 using Microsoft.AspNetCore.Components;
 
@@ -11,41 +13,67 @@ namespace BacklogBlazor.Services;
 public class AuthorizedApiService
 {
     public User User { get; set; }
+    private bool _rememberUser = false;
     
     private readonly HttpClient _httpClient;
     private readonly JwtSecurityTokenHandler _jwtTokenHandler;
+    private readonly SessionService _sessionService;
+    private readonly LocalService _localService;
 
     public AuthorizedApiService(HttpClient httpClient, SessionService sessionService, LocalService localService)
     {
         _httpClient = httpClient;
         _jwtTokenHandler = new JwtSecurityTokenHandler();
+        _sessionService = sessionService;
+        _localService = localService;
         User = new User();
 
-        var jwtToken = sessionService.GetJwtToken();
-        if (string.IsNullOrWhiteSpace(jwtToken))
+        var tokenModel = new TokenModel
         {
-            jwtToken = localService.GetJwtToken();
-        }
-        
-        if (!string.IsNullOrWhiteSpace(jwtToken))
+            JwtToken = sessionService.GetJwtToken(),
+            RefreshToken = sessionService.GetRefreshToken()
+        };
+
+        if (string.IsNullOrWhiteSpace(tokenModel.RefreshToken))
+            tokenModel.RefreshToken = localService.GetRefreshToken();
+
+        if (!string.IsNullOrWhiteSpace(tokenModel.RefreshToken))
+            _rememberUser = true;
+            
+        // If token is invalid or expired, and refresh token exists, attempt refresh
+        if ((!SetBearerToken(tokenModel) || !User.IsAuthenticated)
+            && !string.IsNullOrWhiteSpace(tokenModel.RefreshToken))
         {
-            SetBearerToken(jwtToken);
+            // No supported way to await this. Cross your fingers for no race condition!
+            RefreshJwtToken();
         }
-        
+
         if (!User.IsAuthenticated)
         {
-            sessionService.RemoveJwtToken();
-            localService.RemoveJwtToken();
+            _sessionService.RemoveJwtToken();
+            _sessionService.RemoveRefreshToken();
+            _localService.RemoveRefreshToken();
+            _rememberUser = false;
         }
     }
 
-    public bool SetBearerToken(string authToken)
+    public bool SetBearerToken(TokenModel tokenModel, bool? rememberUser = null)
     {
+        if (rememberUser.HasValue)
+            _rememberUser = rememberUser.Value;
+            
         try
         {
-            User.AuthToken = _jwtTokenHandler.ReadJwtToken(authToken);
-            _httpClient.DefaultRequestHeaders.Authorization = 
-                new AuthenticationHeaderValue("Bearer", authToken);
+            User.RefreshToken = _jwtTokenHandler.ReadJwtToken(tokenModel.RefreshToken);
+            User.RefreshTokenString = tokenModel.RefreshToken;
+            _sessionService.SetRefreshToken(tokenModel.RefreshToken);
+            if (_rememberUser)
+                _localService.SetRefreshToken(tokenModel.RefreshToken);
+
+            User.AuthToken = _jwtTokenHandler.ReadJwtToken(tokenModel.JwtToken);
+            User.AuthTokenString = tokenModel.JwtToken;
+            _sessionService.SetJwtToken(tokenModel.JwtToken);
+            
             return true;
         }
         catch (ArgumentException ex)
@@ -60,6 +88,17 @@ public class AuthorizedApiService
         }
     }
 
+    public async Task Logout()
+    {
+        User.AuthToken = null;
+        User.AuthTokenString = string.Empty;
+        User.RefreshToken = null;
+        User.RefreshTokenString = string.Empty;
+        _sessionService.RemoveJwtToken();
+        _sessionService.RemoveRefreshToken();
+        _localService.RemoveRefreshToken();
+    }
+
     public bool RequireAuthentication(NavigationManager nav)
     {
         if (!User.IsAuthenticated)
@@ -71,9 +110,59 @@ public class AuthorizedApiService
         return true;
     }
 
+    private async Task<T> SendRequest<T>(HttpMethod method, string endpoint, string token, object? payload = null, bool isRefresh = false)
+    {
+        // Skip this check is refreshing to avoid recursion loop
+        if (!isRefresh && !User.IsAuthTokenValid)
+        {
+            var refreshSuccess = await RefreshJwtToken();
+            
+            if (!refreshSuccess || !User.IsAuthenticated)
+                throw new Exception("Unable to authenticate");
+        }
+        
+        var request = new HttpRequestMessage
+        {
+            Method = method,
+            RequestUri = new Uri(endpoint, UriKind.Relative)
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        if (payload is not null)
+        {
+            request.Content = JsonContent.Create(payload);
+        }
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException("Unsuccessful response code", null, response.StatusCode);
+        
+        return await response.Content.ReadFromJsonAsync<T>();
+    }
+
+    public async Task<bool> RefreshJwtToken()
+    {
+        if (!User.IsRefreshTokenValid)
+            return false;
+
+        var tokenModel = new TokenModel();
+        try
+        {
+            tokenModel = await SendRequest<TokenModel>(HttpMethod.Post, "auth/refresh", User.RefreshTokenString, isRefresh: true);
+        }
+        catch (Exception ex)
+        {
+            // Most likely unsuccessful response
+            return false;
+        }
+        
+        return SetBearerToken(tokenModel);
+    }
+
     private async Task<long> GetNextBacklogId()
     {
-        return await _httpClient.GetFromJsonAsync<long>("backlog/next");
+        return await SendRequest<long>(HttpMethod.Get, "backlog/next", User.AuthTokenString);
     }
 
     public async Task CreateNewBacklog(NavigationManager nav, NotificationService notificationService)
@@ -116,11 +205,11 @@ public class AuthorizedApiService
     
     public async Task<BacklogModel> GetBacklog(long backlogId)
     {
-        return await _httpClient.GetFromJsonAsync<BacklogModel>($"backlog/{backlogId}");
+        return await SendRequest<BacklogModel>(HttpMethod.Get, $"backlog/{backlogId}", User.AuthTokenString);
     }
 
     public async Task<List<BacklogModel>> GetUserBacklogs()
     {
-        return await _httpClient.GetFromJsonAsync<List<BacklogModel>>("Backlog/list");
+        return await SendRequest<List<BacklogModel>>(HttpMethod.Get, "backlog/list", User.AuthTokenString);
     }
 }

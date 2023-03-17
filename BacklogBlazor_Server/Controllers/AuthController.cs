@@ -5,6 +5,7 @@ using BacklogBlazor_Server.Services;
 using BacklogBlazor_Shared.Models.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using BCrypt.Net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using BC = BCrypt.Net.BCrypt;
 
@@ -16,11 +17,13 @@ public class AuthController : Controller
 {
     private readonly AuthDataService _authDataService;
     private readonly string _jwtSecret;
+    private readonly string _refreshSecret;
 
     public AuthController(AuthDataService authDataService)
     {
         _authDataService = authDataService;
         _jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
+        _refreshSecret = Environment.GetEnvironmentVariable("REFRESH_SECRET");
     }
     
     [HttpPost("login")]
@@ -37,7 +40,13 @@ public class AuthController : Controller
         if (!validLogin)
             return Unauthorized();
 
-        return Ok(GenerateJwtToken(passwordHash.UserId, passwordHash.Username));
+        var tokenModel = new TokenModel
+        {
+            JwtToken = GenerateJwtToken(passwordHash.UserId, passwordHash.Username),
+            RefreshToken = GenerateRefreshToken(passwordHash.UserId, passwordHash.Username)
+        };
+
+        return Ok(tokenModel);
     }
 
     [HttpPost("register")]
@@ -56,11 +65,43 @@ public class AuthController : Controller
         
         //TODO: Send confirmation email
 
+        var tokenModel = new TokenModel
+        {
+            JwtToken = GenerateJwtToken(userId.Value, registerRequest.Username),
+            RefreshToken = GenerateRefreshToken(userId.Value, registerRequest.Username)
+        };
 
-        return Ok(GenerateJwtToken(userId.Value, registerRequest.Username));
+        return Ok(tokenModel);
     }
 
-    //TODO: Refresh endpoint
+    [HttpPost("refresh")]
+    [Authorize("Refresh")]
+    public async Task<IActionResult> RefreshJwtToken()
+    {
+        if (!User.HasClaim(c => c.Type == "userId"))
+            return Forbid();
+        
+        var userIdString = User.Claims.FirstOrDefault(c => c.Type == "userId")?.Value;
+        if (!long.TryParse(userIdString, out var userIdLong))
+            return Forbid();
+
+        var username = await _authDataService.GetUsername(userIdLong);
+
+        if (string.IsNullOrWhiteSpace(username))
+            return Forbid();
+
+        var createdAtString = User.Claims.FirstOrDefault(c => c.Type == "createdAt")?.Value;
+        if (!DateTime.TryParse(createdAtString, out var createdAtDate))
+            return StatusCode(500, "Error parsing createdAt DateTime");
+
+        var tokenModel = new TokenModel
+        {
+            JwtToken = GenerateJwtToken(userIdLong, username),
+            RefreshToken = GenerateRefreshToken(userIdLong, username, createdAtDate.ToLocalTime())
+        };
+
+        return Ok(tokenModel);
+    }
     
     #region HelperMethods
 
@@ -83,6 +124,30 @@ public class AuthController : Controller
             claims: claims,
             signingCredentials: credentials,
             expires: DateTime.Now + TimeSpan.FromMinutes(30)
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+    
+    private string GenerateRefreshToken(long userId, string username, DateTime? createdAt = null)
+    {
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_refreshSecret));
+        var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+        var currentTime = DateTime.Now.ToString("O");
+        var createdAtTime = createdAt?.ToString("O") ?? currentTime;
+
+        var claims = new List<Claim>
+        {
+            new("userId", userId.ToString()),
+            new("username", username),
+            new("createdAt", createdAtTime),
+            new("updatedAt", currentTime)
+        };
+
+        var token = new JwtSecurityToken(
+            claims: claims,
+            signingCredentials: credentials,
+            expires: DateTime.Now + TimeSpan.FromDays(30)
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);

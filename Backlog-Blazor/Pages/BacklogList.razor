@@ -66,6 +66,7 @@
                 case HttpStatusCode.InternalServerError:
                     await NotificationService.DisplayNotification("Error retrieving backlogs: Server error", NotificationLevel.Error);
                     break;
+                case HttpStatusCode.Unauthorized:
                 case HttpStatusCode.Forbidden:
                     await NotificationService.DisplayNotification("Error retrieving backlog: Invalid user. Try logging in!", NotificationLevel.Error);
                     break;

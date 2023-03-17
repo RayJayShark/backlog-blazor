@@ -104,4 +104,17 @@ public class AuthDataService
 
         return users is not null && users.Any();
     }
+
+    public async Task<string> GetUsername(long userId)
+    {
+        await _sqlConnection.OpenAsync();
+
+        var username =
+            await _sqlConnection.QueryFirstAsync<string>("select Username from User where userId = @userId limit 1",
+                new { userId });
+
+        await _sqlConnection.CloseAsync();
+
+        return username;
+    }
 }

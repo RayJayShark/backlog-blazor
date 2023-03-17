@@ -10,15 +10,30 @@
                 <HeroIcons Icon="HeroIcons.HeroIcon.Bars3_Outline"/>
             </button>
             <div class="justify-center">
-                <a>GameLog</a>
+                <a href="/">GameLog</a>
             </div>
-            <div class="right-0">
-                <button class="flex items-center rounded-full hover:opacity-50" @onclick="TempNavigateToLogin">
+            <div>
+                <button class="flex items-center rounded-full peer hover:opacity-50">
                     <img alt="Profile Avatar" src="icon-192.png" class="rounded-full h-10 w-10"/> @* TODO: temporary profile avatar *@
                     <div class="absolute flex items-center justify-center h-10 w-10 rounded-full opacity-0 hover:opacity-100">
                         <HeroIcons Icon="HeroIcons.HeroIcon.AdjustmentsHorizontal_Solid" Class="absolute"/>
                     </div>
                 </button>
+                
+                @* User Options Popup *@
+                <div class="flex-col absolute hidden drop-shadow-md hover:flex peer-focus:flex">
+                    <div class="w-0 h-0 self-center border-x-8 border-x-transparent border-b-[15px] border-b-amber-400" />
+                    <div class="p-2 rounded bg-amber-400">
+                        @if (AuthorizedApiService.User.IsAuthenticated)
+                        {
+                            <button type="button" @onclick="Logout">Logout</button>
+                        }
+                        else
+                        {
+                            <button type="button" @onclick="NavigateToLogin">Login</button>
+                        }
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -42,9 +57,9 @@
 </nav>
 
 @code {
-    private bool collapseNavMenu = true;
+    private bool _collapseNavMenu = true;
 
-    private string? NavMenuCssClass => collapseNavMenu ? "hidden" : null;
+    private string? NavMenuCssClass => _collapseNavMenu ? "hidden" : null;
 
     [Inject] 
     private NavigationManager Nav { get; set; }    
@@ -62,13 +77,13 @@
 
     private void ToggleNavMenu()
     {
-        collapseNavMenu = !collapseNavMenu;
+        _collapseNavMenu = !_collapseNavMenu;
         StateHasChanged();
     }
 
     private void CloseNavMenu(object? sender, LocationChangedEventArgs locationChangedEventArgs)
     {
-        collapseNavMenu = true;
+        _collapseNavMenu = true;
         StateHasChanged();
     }
 
@@ -77,9 +92,15 @@
         await AuthorizedApiService.CreateNewBacklog(Nav, NotificationService);
     }
            
-    private void TempNavigateToLogin()
+    private void NavigateToLogin()
     {
         Nav.NavigateTo("/login");
     }
 
+    private async Task Logout()
+    {
+        AuthorizedApiService.Logout();
+        StateHasChanged();
+        Nav.NavigateTo("/");
+    }
 }

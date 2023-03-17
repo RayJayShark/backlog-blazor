@@ -88,33 +88,27 @@
             return;
         }
 
-        var jwtToken = await response.Content.ReadAsStringAsync();
+        var tokenModel = await response.Content.ReadFromJsonAsync<TokenModel>();
 
-        if (string.IsNullOrEmpty(jwtToken))
+        // If Jwt token or refresh token is missing
+        if (string.IsNullOrEmpty(tokenModel.JwtToken) || string.IsNullOrWhiteSpace(tokenModel.RefreshToken))
         {
             _loginError = "Error communicating with server";
             _displayLoginError = true;
             _disableButton = false;
             return;
         }
-        
-        if (!AuthApiService.SetBearerToken(jwtToken))
+
+        if (!AuthApiService.SetBearerToken(tokenModel, _rememberMe))
         {
-            //Bad JWT token error
+            //Bad token error
             _loginError = "Unable to authenticate";
             _displayLoginError = true;
             _disableButton = false;
             return;
         }
-        
-        await SessionService.SetJwtTokenAsync(jwtToken);
 
-        if (_rememberMe)
-        {
-            await LocalService.SetJwtTokenAsync(jwtToken);
-        }
-        
-        Nav.NavigateTo("/");
+        Nav.NavigateTo("/backlog/list");
     }
 
     private void NavigateToRegister() => Nav.NavigateTo("/register");

@@ -50,6 +50,8 @@ public class BacklogController : Controller
         return Ok();
     }
 
+    [Authorize]
+    [AllowAnonymous]
     [HttpGet("{backlogId:long}")]
     public async Task<IActionResult> GetBacklog(long backlogId)
     {
