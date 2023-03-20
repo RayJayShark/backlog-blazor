@@ -33,9 +33,9 @@ else
     private BacklogModel _backlogModel = new BacklogModel();
     private bool _loading = false;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        GetBacklog();
+        await GetBacklog();
     }
 
     private async Task GetBacklog()

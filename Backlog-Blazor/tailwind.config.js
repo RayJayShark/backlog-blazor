@@ -2,6 +2,7 @@
 module.exports = {
   content: [
       './wwwroot/index.html', 
+      './wwwroot/scripts/*.js',
       './Pages/*.razor', 
       './Pages/**/*.razor',
       './Shared/*.razor',

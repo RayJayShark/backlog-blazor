@@ -47,6 +47,8 @@ public class BacklogController : Controller
         if (!success)
             return StatusCode(500, "Error updating backlog games");
 
+        await _backlogDataService.CacheGames(backlog.Games);
+        
         return Ok();
     }
 
@@ -64,10 +66,12 @@ public class BacklogController : Controller
 
         if (userId >= 0 && await _backlogDataService.IsOwner(backlogId, userId))
             backlog.IsOwner = true;
-            
-        //TODO: Cache data from HLTB
+        
         backlog.Games = backlog.Games.Select(g =>
         {
+            if (g.CompleteAllSeconds > 0) // Data retrieved from cache
+                return g;
+            
             var hltbGames = _hltbService.GetGamesFromSearch(g.Name).Result;
             var gameData = hltbGames.FirstOrDefault(hltbG => hltbG.Id == g.Id);
             return new Game

@@ -124,13 +124,20 @@ public class BacklogDataService
 
         var gameEnum = await _sqlConnection.QueryAsync<Game>(
             @"select 
-                    GameId as Id, 
-                    Rank, 
-                    ItemName as Name, 
-                    EstimateHoursToComplete as EstimateCompleteHours, 
-                    CurrentHours,
-                    Completed
-                from backlog_item where BacklogId = @backlogId
+                    bi.GameId as Id, 
+                    bi.Rank, 
+                    bi.ItemName as Name, 
+                    bi.EstimateHoursToComplete as EstimateCompleteHours, 
+                    bi.CurrentHours,
+                    bi.Completed,
+                    gc.ImageSource as GameImage,
+                    gc.CompleteMainSeconds,
+                    gc.CompletePlusSeconds,
+                    gc.Complete100Seconds,
+                    gc.CompleteAllSeconds
+                from backlog_item bi
+                    left join game_cache gc on bi.GameId = gc.GameId                    
+                where BacklogId = @backlogId
                 order by Rank",
             new { backlogId });
         backlog.Games = gameEnum.ToList();
@@ -201,5 +208,28 @@ public class BacklogDataService
         await _sqlConnection.CloseAsync();
 
         return isOwner;
+    }
+
+    public async Task CacheGames(List<Game> games)
+    {
+        await _sqlConnection.OpenAsync();
+
+        var tran = await _sqlConnection.BeginTransactionAsync();
+
+        var rowsAffected = await _sqlConnection.ExecuteAsync(
+            @"insert into game_cache (GameId, ImageSource, CompleteMainSeconds, CompletePlusSeconds, Complete100Seconds, CompleteAllSeconds) values 
+                                        (@id, @gameImage, @completeMainSeconds, @completePlusSeconds, @complete100Seconds, @completeAllSeconds)
+                    on duplicate key update
+                                         ImageSource = @gameImage,
+                                         CompleteMainSeconds = @completeMainSeconds,
+                                         CompletePlusSeconds = @completePlusSeconds,
+                                         Complete100Seconds = @complete100Seconds,
+                                         CompleteAllSeconds = @completeAllSeconds",
+            games, tran);
+        
+        await tran.CommitAsync();
+
+
+        await _sqlConnection.CloseAsync();
     }
 }

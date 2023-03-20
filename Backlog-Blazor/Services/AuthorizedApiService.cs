@@ -109,8 +109,14 @@ public class AuthorizedApiService
 
         return true;
     }
+    
+    private async Task<T?> SendRequest<T>(HttpMethod method, string endpoint, string token, object? payload = null, bool isRefresh = false)
+    {
+        return (T?) await SendRequest(method, endpoint, token, payload, isRefresh, typeof(T));
+    }
 
-    private async Task<T> SendRequest<T>(HttpMethod method, string endpoint, string token, object? payload = null, bool isRefresh = false)
+    private async Task<object?> SendRequest(HttpMethod method, string endpoint, string token, object? payload = null,
+        bool isRefresh = false, Type? type = null)
     {
         // Skip this check is refreshing to avoid recursion loop
         if (!isRefresh && !User.IsAuthTokenValid)
@@ -138,25 +144,20 @@ public class AuthorizedApiService
         if (!response.IsSuccessStatusCode)
             throw new HttpRequestException("Unsuccessful response code", null, response.StatusCode);
         
-        return await response.Content.ReadFromJsonAsync<T>();
+        if (type is not null)
+            return await response.Content.ReadFromJsonAsync(type);
+
+        return null;
     }
 
     public async Task<bool> RefreshJwtToken()
     {
         if (!User.IsRefreshTokenValid)
             return false;
-
-        var tokenModel = new TokenModel();
-        try
-        {
-            tokenModel = await SendRequest<TokenModel>(HttpMethod.Post, "auth/refresh", User.RefreshTokenString, isRefresh: true);
-        }
-        catch (Exception ex)
-        {
-            // Most likely unsuccessful response
-            return false;
-        }
         
+        // Do not catch exceptions, caught upstream to give user useful notifications
+        var tokenModel = await SendRequest<TokenModel>(HttpMethod.Post, "auth/refresh", User.RefreshTokenString, isRefresh: true);
+
         return SetBearerToken(tokenModel);
     }
 
@@ -211,5 +212,10 @@ public class AuthorizedApiService
     public async Task<List<BacklogModel>> GetUserBacklogs()
     {
         return await SendRequest<List<BacklogModel>>(HttpMethod.Get, "backlog/list", User.AuthTokenString);
+    }
+
+    public async Task SaveBacklog(BacklogModel backlogModel)
+    {
+        await SendRequest(HttpMethod.Post, "backlog", User.AuthTokenString, backlogModel);
     }
 }

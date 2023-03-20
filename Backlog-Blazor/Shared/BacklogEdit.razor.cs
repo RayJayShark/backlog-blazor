@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Web;
 using BacklogBlazor_Shared.Models;
+using BacklogBlazor.Icons;
 using BacklogBlazor.Models;
 using BacklogBlazor.Services;
 using Microsoft.AspNetCore.Components;
@@ -31,16 +32,24 @@ public partial class BacklogEdit : ComponentBase
     public string Class { get; set; }
 
     [Inject] private HttpClient HttpClient { get; set; }
+    [Inject] private AuthorizedApiService AuthorizedApiService { get; set; }
     [Inject] private NotificationService NotificationService { get; set; }
 
     private event Action BacklogChanged;
     private List<TypeaheadGame> _typeaheadGames = new();
     private bool _disableSave = false;
     private string _notification;
+    private HeroIcons[] _refreshIcons;
+    private bool _disableRefresh = false;
 
     public BacklogEdit()
     {
         BacklogChanged = OnBacklogChanged;
+    }
+
+    protected override void OnInitialized()
+    {
+        _refreshIcons = new HeroIcons[_typeaheadGames.Count + 1];
     }
 
     private void OnBacklogChanged()
@@ -110,6 +119,8 @@ public partial class BacklogEdit : ComponentBase
         var typeaheadGame = new TypeaheadGame();
         typeaheadGame.Game.Rank = _typeaheadGames.Count + 1;
         _typeaheadGames.Add(typeaheadGame);
+
+        _refreshIcons = new HeroIcons[_typeaheadGames.Count + 1];
     }
 
     private async Task SaveBacklog()
@@ -119,11 +130,13 @@ public partial class BacklogEdit : ComponentBase
         
         // _typeaheadGames needs to be inserted into the Backlog.Games list
         _backlog.Games = _typeaheadGames.Select(tg => tg.Game).ToList();
-
-        HttpResponseMessage response = null;
+        
         try
         {
-            response = await HttpClient.PostAsJsonAsync("backlog", _backlog);
+            await AuthorizedApiService.SaveBacklog(_backlog);
+            
+            await NotificationService.DisplayNotification("Backlog saved!", NotificationLevel.Success);
+            DoneEditing.InvokeAsync();
         }
         catch (HttpRequestException ex)
         {
@@ -137,6 +150,7 @@ public partial class BacklogEdit : ComponentBase
                     await NotificationService.DisplayNotification("Error when saving backlog: Invalid backlog ID",
                         NotificationLevel.Error);
                     break;
+                case HttpStatusCode.Unauthorized:
                 case HttpStatusCode.Forbidden:
                     await NotificationService.DisplayNotification("Error when saving backlog: Unable to authenticate",
                         NotificationLevel.Error);
@@ -147,14 +161,47 @@ public partial class BacklogEdit : ComponentBase
                     break;
             }
         }
-
-        if (response is not null && response.IsSuccessStatusCode)
-        {
-            await NotificationService.DisplayNotification("Backlog saved!", NotificationLevel.Success);
-            DoneEditing.InvokeAsync();
-        }
-
+        
         _disableSave = false;
         StateHasChanged();
+    }
+    
+    private async Task RefreshGamesData(int iconToSpin, params Game[] games)
+    {
+        _disableRefresh = true;
+        await _refreshIcons[iconToSpin].Spin();
+        
+        try
+        {
+            var response = await HttpClient.PostAsJsonAsync("games/refreshCache", games);
+
+            var updatedGames = await response.Content.ReadFromJsonAsync<List<Game>>();
+
+            foreach (var game in updatedGames)
+            {
+                var index = _typeaheadGames.FindIndex(g => g.Game.Id == game.Id);
+                _typeaheadGames[index].Game = game;
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            switch (ex.StatusCode)
+            {
+                case HttpStatusCode.InternalServerError:
+                    await NotificationService.DisplayNotification($"Error refreshing game data: Server error", NotificationLevel.Error);
+                    break;
+                default:
+                    await NotificationService.DisplayNotification(
+                        $"Error refreshing game data: Unable to connect to server", NotificationLevel.Error);
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.DisplayNotification("Error refreshing game data: Unknown error", NotificationLevel.Error);
+        }
+
+        _disableRefresh = false;
+        await _refreshIcons[iconToSpin].StopSpin();
     }
 }

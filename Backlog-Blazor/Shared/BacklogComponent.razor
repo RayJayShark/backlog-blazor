@@ -1,5 +1,6 @@
 ﻿@using BacklogBlazor_Shared.Models
 @using BacklogBlazor.Icons
+@using BacklogBlazor.Models
 
 <div class="@Class">
     <div class="flex flex-row justify-between">
@@ -18,7 +19,23 @@
         <thead>
         <tr class="divide-x divide-slate-400">
             <th class="border-b border-slate-400 w-6">Rank</th>
-            <th class="border-b border-slate-400 w-1/2 min-w-[400px]">Game</th>
+            <th class="border-b border-slate-400 w-1/2 min-w-[400px]">
+                <div class="px-2 flex justify-between items-center">
+                    @if (Backlog.Games.Any())
+                    {
+                        <div>@*This exists to center the heading*@</div>
+                        <span>Game</span>
+                        <button type="button" class="mr-6 my-2" title="Refresh data for all games" disabled="@_disableRefresh"
+                                @onclick="@(() => RefreshGamesData(0, Backlog.Games.ToArray()))">
+                            <HeroIcons @ref="_refreshIcons[0]" Icon="HeroIcons.HeroIcon.ArrowPath_Outline"/>
+                        </button>
+                    }
+                    else
+                    {
+                        <span>Game</span>
+                    }
+                </div>
+            </th>
             <th class="border-b border-slate-400 w-1/6">Estimated Hours</th>
             <th class="border-b border-slate-400 w-1/6">Current Hours</th>
             <th class="border-b border-slate-400 w-6">Completed?</th>
@@ -36,7 +53,13 @@
             <tr class="divide-x divide-slate-400">
                 <td class="border-b border-slate-400 text-center font-bold">@game.Rank</td>
                 <td class="border-b border-slate-400 px-2 py-1">
-                    <BacklogGame Game="game"/>
+                    <div class="flex justify-between">
+                        <BacklogGame Game="game"/>
+                        <button type="button" class="mr-6" title="Refresh game data" disabled="@_disableRefresh"
+                                @onclick="@(() => RefreshGamesData(game.Rank, game))">
+                            <HeroIcons @ref="_refreshIcons[game.Rank]" Icon="HeroIcons.HeroIcon.ArrowPath_Outline"/>
+                        </button>
+                    </div>
                 </td>
                 <td class="border-b border-slate-400 text-center font-bold">
                     @game.EstimateCompleteHours
