@@ -92,8 +92,8 @@ public class BacklogDataService
                 transaction);
 
             var rowsAffected = 
-                await _sqlConnection.ExecuteAsync(@"insert into backlog_item (BacklogId, GameId, `Rank`, ItemName, EstimateHoursToComplete, CurrentHours)
-                                                        values (@backlogId, @id, @rank, @name, @EstimateCompleteHours, @currentHours)", backlogModel.Games,
+                await _sqlConnection.ExecuteAsync(@"insert into backlog_item (BacklogId, GameId, `Rank`, ItemName, EstimateHoursToComplete, CurrentHours, Completed)
+                                                        values (@backlogId, @id, @rank, @name, @EstimateCompleteHours, @currentHours, @completed)", backlogModel.Games,
                 transaction);
 
             if (rowsAffected != backlogModel.Games.Count)

@@ -1,21 +1,42 @@
 ﻿@using BacklogBlazor_Shared.Models
-<div class="@Class">
-    <div class="flex flex-row items-center space-x-4">
-        <div class="group">
-            @*<img alt="@(select_context.Name + " Cover")" src="@select_context.GameImageUrl" class="relative w-8 z-50 transition-all duration-200 border border-slate-500 border-opacity-90 rounded hover:scale-[7]"/>*@
-            <img alt="@(Game.Name + " Cover")" src="@Game.GameImageUrl" class="w-8"/>
-            <div class="absolute flex flex-row items-center drop-shadow-md space-x-0 translate-x-10 -translate-y-[56%] z-50 transition-all duration-300 invisible opacity-0 group-hover:opacity-100 group-hover:visible">
-                <div class="w-0 h-0 border-y-8 border-y-transparent border-r-[15px] border-r-slate-500 border-opacity-90"/>
-                <div class="p-3 bg-slate-500/90 rounded-md">
-                    <img alt="@(Game.Name + " Cover Enlarged")" src="@(@Game.GameImageUrl + "?width=250")"/>
+<div class="w-full @Class">
+    <div class="h-12 flex flex-col md:flex-row items-center space-x-4">
+        <div class="flex flex-row items-center md:basis-1/4 md:border-r-2 md:border-r-slate-500">
+            <div class="group flex-none">
+                @*<img alt="@(select_context.Name + " Cover")" src="@select_context.GameImageUrl" class="relative w-8 z-50 transition-all duration-200 border border-slate-500 border-opacity-90 rounded hover:scale-[7]"/>*@
+                <img alt="@(Game.Name + " Cover")" src="@Game.GameImageUrl" class="w-8"/>
+                <div class="absolute flex flex-row items-center drop-shadow-md space-x-0 translate-x-10 -translate-y-[56%] z-50 transition-all duration-300 invisible opacity-0 group-hover:opacity-100 group-hover:visible">
+                    <div class="w-0 h-0 border-y-8 border-y-transparent border-r-[15px] border-r-slate-500 border-opacity-90"/>
+                    <div class="p-3 bg-slate-500/90 rounded-md">
+                        <img alt="@(Game.Name + " Cover Enlarged")" src="@(@Game.GameImageUrl + "?width=250")"/>
+                    </div>
                 </div>
             </div>
+            <div title="@Game.Name" class="px-4 clamp-lines-2 font-bold">@Game.Name</div>
         </div>
-        <div class="font-bold">@Game.Name</div>
-        <div class="font-extrabold pb-1 scale-y-[2]">|</div>
-        <div>Main: @Game.CompleteMainTime.TotalHours.ToString("0.0")</div>
-        <div>Main+: @Game.CompletePlusTime.TotalHours.ToString("0.0")</div>
-        <div>100%: @Game.Complete100Time.TotalHours.ToString("0.0")</div>
+        <div class="flex flex-row justify-evenly md:basis-3/4">
+            @if (OnTimeClicked.HasDelegate)
+            {
+                <button type="button" title="Set as Estimated Hours" class="w-[120px] px-2 py-1 rounded-md drop-shadow-sm bg-slate-50 outline outline-1 outline-slate-500 hover:bg-white"
+                        @onclick="@(() => OnTimeClicked.InvokeAsync(Math.Round(Game.CompleteMainTime.TotalHours, 1, MidpointRounding.AwayFromZero)))">
+                    <strong>Main:</strong> @Game.CompleteMainTime.TotalHours.ToString("0.0") h
+                </button>
+                <button type="button" title="Set as Estimated Hours" class="w-[120px] px-2 py-1 rounded-md drop-shadow-sm bg-slate-50 outline outline-1 outline-slate-500 hover:bg-white"
+                        @onclick="@(() => OnTimeClicked.InvokeAsync(Math.Round(Game.CompletePlusTime.TotalHours, 1, MidpointRounding.AwayFromZero)))">
+                    <strong>Main+:</strong> @Game.CompletePlusTime.TotalHours.ToString("0.0") h
+                </button>
+                <button type="button" title="Set as Estimated Hours" class="w-[120px] px-2 py-1 rounded-md drop-shadow-sm bg-slate-50 outline outline-1 outline-slate-500 hover:bg-white"
+                        @onclick="@(() => OnTimeClicked.InvokeAsync(Math.Round(Game.Complete100Time.TotalHours, 1, MidpointRounding.AwayFromZero)))">
+                    <strong>100%:</strong> @Game.Complete100Time.TotalHours.ToString("0.0") h
+                </button>
+            }
+            else
+            {
+                <div>Main: @Game.CompleteMainTime.TotalHours.ToString("0.0") h</div>
+                <div>Main+: @Game.CompletePlusTime.TotalHours.ToString("0.0") h</div>
+                <div>100%: @Game.Complete100Time.TotalHours.ToString("0.0") h</div>
+            }
+        </div>
     </div>
 </div>
 
@@ -25,4 +46,7 @@
     
     [Parameter]
     public string Class { get; set; }
+    
+    [Parameter]
+    public EventCallback<double> OnTimeClicked { get; set; }
 }

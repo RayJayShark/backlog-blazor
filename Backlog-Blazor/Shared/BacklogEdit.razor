@@ -59,40 +59,53 @@
                 </td>
                 <td class="border-b border-slate-400 px-2 py-1">
                     <div class="flex justify-between">
-                        <BlazoredTypeahead TItem="@Game" TValue="@Game" @bind-Value="@game.Game" SearchMethod="@(searchText => SearchForGames(searchText, game.Game.Rank))"
-                                           Debounce="500" placeholder="Search for a game..." DisableClear="true">
-                            <SelectedTemplate Context="select_context">
-                                @if (game.Game.Id < 0)
-                                {
-                                    <div>Search for a game...</div>
-                                }
-                                else
-                                {
-                                    <BacklogGame Game="select_context"/>
-                                }
-                            </SelectedTemplate>
-                            <ResultTemplate Context="result_context">
-                                <div class="flex flex-col">
-                                    <div class="flex flex-row items-center">
-                                        <div class="group">
-                                            <img alt="@(result_context.Name + " Cover")" src="@result_context.GameImageUrl" class="w-8"/>
-                                            <div class="fixed flex flex-row items-center drop-shadow-md space-x-0 translate-x-10 -translate-y-[56%] z-50 transition-all duration-300 invisible opacity-0 group-hover:opacity-100 group-hover:visible">
-                                                <div class="w-0 h-0 border-y-8 border-y-transparent border-r-[15px] border-r-slate-500 border-opacity-90"/>
-                                                <div class="p-3 bg-slate-500/90 rounded-md">
-                                                    <img alt="@(result_context.Name + " Cover Enlarged")" src="@(@result_context.GameImageUrl + "?width=250")"/>
+                        @if (game.DisableTypeahead)
+                        {
+                            <BacklogGame Game="@game.Game" OnTimeClicked="@(newTime => game.Game.EstimateCompleteHours = newTime)"/>
+                            <button type="button" title="Change game" @onclick="@(() => game.DisableTypeahead = false)">
+                                <HeroIcons Icon="HeroIcons.HeroIcon.Pencil_Solid" Class="w-4 h-4"/>
+                            </button>
+                        }
+                        else
+                        {
+                            <BlazoredTypeahead TItem="@Game" TValue="@Game" @bind-Value="@game.Game" SearchMethod="@(searchText => SearchForGames(searchText, game.Game.Rank))"
+                                               Debounce="500" placeholder="Search for a game..." DisableClear="true">
+                                <SelectedTemplate Context="select_context">
+                                    @if (game.Game.Id < 0)
+                                    {
+                                        <div>Search for a game...</div>
+                                    }
+                                    else
+                                    {
+                                        <BacklogGame Game="select_context"/>
+                                        <button type="button" title="Save game" @onclick="@(() => game.DisableTypeahead = true)">
+                                            <HeroIcons Icon="HeroIcons.HeroIcon.CheckCircle_Solid" Class="w-5 h-5"/>
+                                        </button>
+                                    }
+                                </SelectedTemplate>
+                                <ResultTemplate Context="result_context">
+                                    <div class="flex flex-col">
+                                        <div class="flex flex-row items-center">
+                                            <div class="group">
+                                                <img alt="@(result_context.Name + " Cover")" src="@result_context.GameImageUrl" class="w-8"/>
+                                                <div class="fixed flex flex-row items-center drop-shadow-md space-x-0 translate-x-10 -translate-y-[56%] z-50 transition-all duration-300 invisible opacity-0 group-hover:opacity-100 group-hover:visible">
+                                                    <div class="w-0 h-0 border-y-8 border-y-transparent border-r-[15px] border-r-slate-500 border-opacity-90"/>
+                                                    <div class="p-3 bg-slate-500/90 rounded-md">
+                                                        <img alt="@(result_context.Name + " Cover Enlarged")" src="@(@result_context.GameImageUrl + "?width=250")"/>
+                                                    </div>
                                                 </div>
                                             </div>
+                                            <div class="font-bold">@result_context.Name</div>
                                         </div>
-                                        <div class="font-bold">@result_context.Name</div>
+                                        <div class="flex flex-row items-center">
+                                            <div>Main: @result_context.CompleteMainTime.TotalHours.ToString("0.0")</div>
+                                            <div>Main+: @result_context.CompletePlusTime.TotalHours.ToString("0.0")</div>
+                                            <div>100%: @result_context.Complete100Time.TotalHours.ToString("0.0")</div>
+                                        </div>
                                     </div>
-                                    <div class="flex flex-row items-center">
-                                        <div>Main: @result_context.CompleteMainTime.TotalHours.ToString("0.0")</div>
-                                        <div>Main+: @result_context.CompletePlusTime.TotalHours.ToString("0.0")</div>
-                                        <div>100%: @result_context.Complete100Time.TotalHours.ToString("0.0")</div>
-                                    </div>
-                                </div>
-                            </ResultTemplate>
-                        </BlazoredTypeahead>
+                                </ResultTemplate>
+                            </BlazoredTypeahead>
+                        }
                         @if (game.Game.Id >= 0)
                         {
                             <button type="button" class="mx-4" title="Refresh game data" disabled="@_disableRefresh"
@@ -111,12 +124,21 @@
                 <td class="border-b border-slate-400 text-center"><InputCheckbox @bind-Value="@game.Game.Completed"/></td>
             </tr>
         }
-        <tr>
-            <td colspan="2">
+        <tr class>
+            <td colspan="5" class="border-b border-slate-400">
                 <button type="button" @onclick="AddGame">Add Game</button>
             </td>
         </tr>
         </tbody>
+        <tfoot>
+        <tr class="divide-x divide-slate-400">
+            <td class="font-bold text-center">Totals</td>
+            <td class="font-bold text-center">@_typeaheadGames.Count Games</td>
+            <td class="font-bold text-center">@_typeaheadGames.Sum(g => g.Game.EstimateCompleteHours).ToString("0.0")</td>
+            <td class="font-bold text-center">@_typeaheadGames.Sum(g => g.Game.CurrentHours).ToString("0.0")</td>
+            <td class="font-bold text-center" title="Completed/Total">@_typeaheadGames.Count(g => g.Game.Completed)/@_typeaheadGames.Count</td>
+        </tr>
+        </tfoot>
     </table>
 
     <div class="isolate">

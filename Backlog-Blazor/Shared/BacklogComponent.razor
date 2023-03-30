@@ -71,5 +71,14 @@
             </tr>
         }
         </tbody>
+        <tfoot>
+        <tr class="divide-x divide-slate-400">
+            <td class="font-bold text-center">Totals</td>
+            <td class="font-bold text-center">@Backlog.Games.Count Games</td>
+            <td class="font-bold text-center">@Backlog.Games.Sum(g => g.EstimateCompleteHours).ToString("0.0")</td>
+            <td class="font-bold text-center">@Backlog.Games.Sum(g => g.CurrentHours).ToString("0.0")</td>
+            <td class="font-bold text-center" title="Completed/Total">@Backlog.Games.Count(g => g.Completed)/@Backlog.Games.Count</td>
+        </tr>
+        </tfoot>
     </table>
 </div>

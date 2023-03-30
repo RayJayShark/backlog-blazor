@@ -10,4 +10,15 @@
         margin: 0;
         -moz-appearance: textfield !important;
     }
+
+    .clamp-lines-2 {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        -moz-webkit-box-orient: vertical;
+        -moz-webkit-line-clamp: 2;
+        line-height: 1.5rem;    /* fallback */
+    }
 }

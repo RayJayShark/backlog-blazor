@@ -6,4 +6,6 @@ namespace BacklogBlazor.Models;
 public class TypeaheadGame
 {
     public Game Game { get; set; } = new();
+
+    public bool DisableTypeahead { get; set; } = true;
 }
