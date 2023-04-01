@@ -16,14 +16,20 @@ namespace BacklogBlazor_Server.Controllers;
 public class AuthController : Controller
 {
     private readonly AuthDataService _authDataService;
+    private readonly ThirdPartyService _thirdPartyService;
     private readonly string _jwtSecret;
     private readonly string _refreshSecret;
+    private readonly string _discordClient;
+    private readonly string _discordSecret;
 
-    public AuthController(AuthDataService authDataService)
+    public AuthController(AuthDataService authDataService, ThirdPartyService thirdPartyService)
     {
         _authDataService = authDataService;
+        _thirdPartyService = thirdPartyService;
         _jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
         _refreshSecret = Environment.GetEnvironmentVariable("REFRESH_SECRET");
+        _discordClient = Environment.GetEnvironmentVariable("DISCORD_CLIENT");
+        _discordSecret = Environment.GetEnvironmentVariable("DISCORD_SECRET");
     }
     
     [HttpPost("login")]
@@ -46,6 +52,33 @@ public class AuthController : Controller
             RefreshToken = GenerateRefreshToken(passwordHash.UserId, passwordHash.Username)
         };
 
+        return Ok(tokenModel);
+    }
+
+    [HttpPost("login/discord")]
+    public async Task<IActionResult> DiscordLogin([FromQuery] string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return BadRequest();
+
+        var discordAccessToken = await _thirdPartyService.AuthenticateDiscordCode(code);
+
+        if (string.IsNullOrWhiteSpace(discordAccessToken))
+            return BadRequest();
+
+        var discordUser = await _thirdPartyService.GetDiscordUserData(discordAccessToken);
+
+        if (discordUser is null)
+            return BadRequest();
+
+        var user = await _authDataService.UpsertDiscordUser(discordUser);
+
+        var tokenModel = new TokenModel
+        {
+            JwtToken = GenerateJwtToken(user.UserId, user.Username),
+            RefreshToken = GenerateRefreshToken(user.UserId, user.Username)
+        };
+        
         return Ok(tokenModel);
     }
 

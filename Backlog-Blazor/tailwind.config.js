@@ -9,7 +9,11 @@ module.exports = {
       './Shared/**/*.razor'
   ],
   theme: {
-    extend: {},
+    extend: {
+        colors: {
+            discord: '#404EED'
+        }
+    },
   },
   plugins: [],
 }

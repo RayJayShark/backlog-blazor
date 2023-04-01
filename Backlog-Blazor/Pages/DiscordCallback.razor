@@ -1,0 +1,54 @@
+﻿@page "/login/discord"
+@using BacklogBlazor.Services
+@using BacklogBlazor_Shared.Models.Authentication
+
+Logging you in...
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Code { get; set; }
+    
+    [Inject] HttpClient Client { get; set; }
+    [Inject] AuthorizedApiService AuthorizedApiService { get; set; }
+    [Inject] NavigationManager Nav { get; set; }
+    [Inject] NotificationService NotificationService { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            var response = await Client.PostAsync($"/auth/login/discord?code={Code}", null);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                HandleError("Unable to login using Discord, please try again");
+                return;
+            }
+
+            var tokenModel = await response.Content.ReadFromJsonAsync<TokenModel>();
+
+            var success = AuthorizedApiService.SetBearerToken(tokenModel);
+
+            if (!success)
+            {
+                HandleError("Error setting tokens, please try again");
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            HandleError("Error logging in with Discord");
+            return;
+        }
+        
+        Nav.NavigateTo("/");
+    }
+
+    private async Task HandleError(string errorText)
+    {
+        Nav.NavigateTo("login");
+        await NotificationService.DisplayNotification(errorText, NotificationLevel.Error);
+    }
+
+}

@@ -1,4 +1,5 @@
 ﻿using BacklogBlazor_Server.Models;
+using BacklogBlazor_Server.Models.ThirdPartyAuth;
 using Dapper;
 using MySqlConnector;
 
@@ -90,6 +91,25 @@ public class AuthDataService
         await _sqlConnection.CloseAsync();
 
         return userId;
+    }
+
+    public async Task<User> UpsertDiscordUser(DiscordUser discordUser)
+    {
+        await _sqlConnection.OpenAsync();
+
+        await _sqlConnection.ExecuteAsync(
+            @"insert into user (Email, Username, AvatarUrl, DiscordId) values
+                                    (@email, @username, @avatarUrl, @id)
+                    on duplicate key update
+                         Username = @username,
+                         AvatarUrl = @avatarUrl",
+                discordUser);
+
+        var user = await _sqlConnection.QuerySingleAsync<User>("select * from user where DiscordId = @id", discordUser);
+
+        await _sqlConnection.CloseAsync();
+
+        return user;
     }
     
     public async Task<bool> IsValidUser(long userId)

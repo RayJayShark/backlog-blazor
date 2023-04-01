@@ -18,6 +18,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<AuthDataService>(_ => new AuthDataService(Environment.GetEnvironmentVariable("SQL_CONN")));
 builder.Services.AddScoped<BacklogDataService>(_ => new BacklogDataService(Environment.GetEnvironmentVariable("SQL_CONN")));
 builder.Services.AddSingleton<HltbService>();
+builder.Services.AddSingleton<ThirdPartyService>();
 
 builder.Services.AddCors(options =>
 {

@@ -1,0 +1,32 @@
+﻿@using System.Web
+<div class="flex flex-col mt-8 space-y-8 w-80 @Class">
+    <button type="button" @onclick="RedirectToDiscord" class="py-2 px-4 text-white font-bold bg-discord rounded drop-shadow-sm hover:drop-shadow-md">
+        Login with Discord
+    </button>
+    
+    @*<button type="button" class="py-2 px-4 text-black font-bold bg-white rounded drop-shadow-sm outline outline-1 outline-slate-500 hover:drop-shadow-md">
+        Login with Google
+    </button>*@
+</div>
+
+@code {
+    [Parameter] 
+    public string Class { get; set; }
+
+    [Inject] private NavigationManager Nav { get; set; }
+    [Inject] private IConfiguration Configuration { get; set; }
+
+    private IConfigurationSection config;
+
+    protected override void OnInitialized()
+    {
+        config = Configuration.GetSection("ThirdPartyAuth");
+    }
+
+    private void RedirectToDiscord()
+    {
+        var discordClient = config["DiscordClient"];
+        var redirect = Nav.ToAbsoluteUri("/login/discord").ToString();
+        Nav.NavigateTo($"https://discord.com/oauth2/authorize?response_type=code&client_id={discordClient}&scope=identify%20email&redirect_uri={HttpUtility.UrlEncode(redirect)}&prompt=none");
+    }
+}
