@@ -37,8 +37,8 @@ public class AuthDataService
         await _sqlConnection.OpenAsync();
 
         var hashWithUserId = await _sqlConnection.QueryAsync<PasswordHash>(
-            @"select U.UserId, U.Username, P.PasswordHash as Hash from Password P 
-                    inner join User U on U.UserId = P.UserId
+            @"select U.UserId, U.Username, P.PasswordHash as Hash from password P 
+                    inner join user U on U.UserId = P.UserId
                 where U.Email = @email",
             new { email });
 
@@ -52,7 +52,7 @@ public class AuthDataService
         await _sqlConnection.OpenAsync();
 
         var validLogin = await _sqlConnection.QueryAsync<bool>(@"
-                                            select count(*) > 0 from User 
+                                            select count(*) > 0 from user 
                                             where Email = @email", new {email});
         await _sqlConnection.CloseAsync();
         
@@ -70,13 +70,13 @@ public class AuthDataService
         try
         {
             var userIdEnum = await _sqlConnection.QueryAsync<long>(
-                @"insert into User (Email, Username) values (@email, @username);
+                @"insert into user (Email, Username) values (@email, @username);
                     select LAST_INSERT_ID();",
                 new { email, username }, tran);
             userId = userIdEnum.FirstOrDefault();
             
             await _sqlConnection.ExecuteAsync(
-                "insert into Password (UserId, PasswordHash) values (@userId, @passwordHash)",
+                "insert into password (UserId, PasswordHash) values (@userId, @passwordHash)",
                 new { userId, passwordHash }, tran);
 
             await tran.CommitAsync();
@@ -130,7 +130,7 @@ public class AuthDataService
         await _sqlConnection.OpenAsync();
 
         var username =
-            await _sqlConnection.QueryFirstAsync<string>("select Username from User where userId = @userId limit 1",
+            await _sqlConnection.QueryFirstAsync<string>("select Username from user where userId = @userId limit 1",
                 new { userId });
 
         await _sqlConnection.CloseAsync();

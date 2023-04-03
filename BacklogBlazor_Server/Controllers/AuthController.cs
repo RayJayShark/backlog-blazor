@@ -38,7 +38,7 @@ public class AuthController : Controller
     {
         var passwordHash = await _authDataService.GetHashedPassword(loginRequest.Email);
 
-        if (string.IsNullOrWhiteSpace(passwordHash.Hash))
+        if (passwordHash is null || string.IsNullOrWhiteSpace(passwordHash.Hash))
             return Unauthorized();
         
         var validLogin = BC.EnhancedVerify(loginRequest.Password, passwordHash.Hash, HashType.SHA384);
