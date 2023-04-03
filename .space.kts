@@ -66,7 +66,7 @@ job ("Deploy") {
               	scp -v -r -i /root/.ssh/id_rsa ${'$'}JB_SPACE_FILE_SHARE_PATH/Backlog-Blazor/build/* deploy@game.tacolog.app:/var/www/game.tacolog.app
     			ssh -v -i /root/.ssh/id_rsa deploy@game.tacolog.app "sudo systemctl stop tacologapi.service"
                	ssh -v -i /root/.ssh/id_rsa deploy@game.tacolog.app "sudo rm -rf /var/www/gameapi.tacolog.app/*"
-                scp -v -r -i /root/.ssh/id_rsa ${'$'}JB_SPACE_FILE_SHARE_PATH/Backlog-Blazor/build/* deploy@game.tacolog.app:/var/www/game.tacolog.app
+                scp -v -r -i /root/.ssh/id_rsa ${'$'}JB_SPACE_FILE_SHARE_PATH/BacklogBlazor_Server/build/* deploy@game.tacolog.app:/var/www/gameapi.tacolog.app
                 scp -v -i /root/.ssh/id_rsa /root/.env deploy@game.tacolog.app:/var/www/gameapi.tacolog.app
                 ssh -v -i /root/.ssh/id_rsa deploy@game.tacolog.app "sudo systemctl start tacologapi.service"
    			"""
