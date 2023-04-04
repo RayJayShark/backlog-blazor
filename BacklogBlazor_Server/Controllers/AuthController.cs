@@ -17,19 +17,17 @@ public class AuthController : Controller
 {
     private readonly AuthDataService _authDataService;
     private readonly ThirdPartyService _thirdPartyService;
+    private readonly ILogger<AuthController> _logger;
     private readonly string _jwtSecret;
     private readonly string _refreshSecret;
-    private readonly string _discordClient;
-    private readonly string _discordSecret;
 
-    public AuthController(AuthDataService authDataService, ThirdPartyService thirdPartyService)
+    public AuthController(AuthDataService authDataService, ThirdPartyService thirdPartyService, ILogger<AuthController> logger)
     {
         _authDataService = authDataService;
         _thirdPartyService = thirdPartyService;
+        _logger = logger;
         _jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
         _refreshSecret = Environment.GetEnvironmentVariable("REFRESH_SECRET");
-        _discordClient = Environment.GetEnvironmentVariable("DISCORD_CLIENT");
-        _discordSecret = Environment.GetEnvironmentVariable("DISCORD_SECRET");
     }
     
     [HttpPost("login")]
@@ -59,17 +57,26 @@ public class AuthController : Controller
     public async Task<IActionResult> DiscordLogin([FromQuery] string code)
     {
         if (string.IsNullOrWhiteSpace(code))
+        {
+            _logger.LogWarning("Empty code sent to Discord auth");
             return BadRequest();
+        }
 
         var discordAccessToken = await _thirdPartyService.AuthenticateDiscordCode(code);
 
         if (string.IsNullOrWhiteSpace(discordAccessToken))
+        {
+            _logger.LogWarning("Problem retrieving Discord access token");
             return BadRequest();
+        }
 
         var discordUser = await _thirdPartyService.GetDiscordUserData(discordAccessToken);
 
         if (discordUser is null)
+        {
+            _logger.LogWarning("Unable to get user data from Discord");
             return BadRequest();
+        }
 
         var user = await _authDataService.UpsertDiscordUser(discordUser);
 

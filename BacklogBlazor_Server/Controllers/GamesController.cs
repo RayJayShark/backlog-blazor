@@ -10,11 +10,13 @@ public class GamesController : Controller
 {
     private readonly HltbService _hltbService;
     private readonly BacklogDataService _backlogDataService;
+    private readonly ILogger<GamesController> _logger;
 
-    public GamesController(HltbService hltbService, BacklogDataService backlogDataService)
+    public GamesController(HltbService hltbService, BacklogDataService backlogDataService, ILogger<GamesController> logger)
     {
         _hltbService = hltbService;
         _backlogDataService = backlogDataService;
+        _logger = logger;
     }
 
     [HttpGet("search")]
@@ -28,8 +30,7 @@ public class GamesController : Controller
         }
         catch (Exception ex)
         {
-            // TODO: Log error
-            Console.WriteLine(ex.Message);
+            _logger.LogError("Error getting HLTB games for search: {Message}", ex.Message);
             return StatusCode(500, games);
         }
 

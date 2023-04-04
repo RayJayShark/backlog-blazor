@@ -1,6 +1,7 @@
 ﻿using BacklogBlazor_Server.Models;
 using BacklogBlazor_Server.Models.ThirdPartyAuth;
 using Dapper;
+using Microsoft.AspNetCore.Components;
 using MySqlConnector;
 
 namespace BacklogBlazor_Server.Services;
@@ -8,11 +9,12 @@ namespace BacklogBlazor_Server.Services;
 public class AuthDataService
 {
     private readonly MySqlConnection _sqlConnection;
+    [Inject] private ILogger<AuthDataService> _logger { get; set; }
 
     public AuthDataService(string connectionString)
     {
         _sqlConnection = new MySqlConnection(connectionString);
-        
+
         TestConnection();
     }
 
@@ -24,6 +26,7 @@ public class AuthDataService
         }
         catch (MySqlException ex)
         {
+            _logger.LogError("Error connecting to database: {Message}", ex.Message);
             throw;
         }
         finally
@@ -83,6 +86,7 @@ public class AuthDataService
         }
         catch (Exception ex)
         {
+            _logger.LogError("Error registering user: {Message}", ex.Message);
             await tran.RollbackAsync();
             await _sqlConnection.CloseAsync();
             throw;

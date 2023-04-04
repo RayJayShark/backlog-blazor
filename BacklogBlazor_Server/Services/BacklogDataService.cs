@@ -1,17 +1,19 @@
 ﻿using BacklogBlazor_Shared.Models;
 using Dapper;
+using Microsoft.AspNetCore.Components;
 using MySqlConnector;
 
 namespace BacklogBlazor_Server.Services;
 
 public class BacklogDataService
 {
-    private MySqlConnection _sqlConnection; 
+    private MySqlConnection _sqlConnection;
+    [Inject] private ILogger<AuthDataService> _logger { get; set; }
     
     public BacklogDataService(string connectionString)
     {
         _sqlConnection = new MySqlConnection(connectionString);
-        
+
         TestConnection();
     }
 
@@ -23,6 +25,7 @@ public class BacklogDataService
         }
         catch (MySqlException ex)
         {
+            _logger.LogError("Error connecting to database: {Message}", ex.Message);
             throw;
         }
         finally
@@ -46,7 +49,7 @@ public class BacklogDataService
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError("Error creating new backlog: {Message}", ex.Message);
             throw;
         }
 
@@ -71,7 +74,7 @@ public class BacklogDataService
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError("Error updating backlog metadata: {Message}", ex.Message);
             return false;
         }
 
@@ -104,7 +107,7 @@ public class BacklogDataService
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            _logger.LogError("Error saving backlog items: {Message}", ex.Message);
             await transaction.RollbackAsync();
             return false;
         }
@@ -125,7 +128,7 @@ public class BacklogDataService
         var gameEnum = await _sqlConnection.QueryAsync<Game>(
             @"select 
                     bi.GameId as Id, 
-                    bi.Rank, 
+                    bi.`Rank`, 
                     bi.ItemName as Name, 
                     bi.EstimateHoursToComplete as EstimateCompleteHours, 
                     bi.CurrentHours,
@@ -138,7 +141,7 @@ public class BacklogDataService
                 from backlog_item bi
                     left join game_cache gc on bi.GameId = gc.GameId                    
                 where BacklogId = @backlogId
-                order by Rank",
+                order by `Rank`",
             new { backlogId });
         backlog.Games = gameEnum.ToList();
 

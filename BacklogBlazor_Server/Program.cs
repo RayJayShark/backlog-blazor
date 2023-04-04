@@ -3,10 +3,17 @@ using BacklogBlazor_Server.Services;
 using dotenv.net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
-
-var builder = WebApplication.CreateBuilder(args);
+using NLog;
+using NLog.Config;
+using NLog.Targets;
+using NLog.Web;
+using LogLevel = NLog.LogLevel;
 
 DotEnv.Load(options: new DotEnvOptions(ignoreExceptions: false));
+ConfigureNLog();
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseNLog();
 
 // Add services to the container.
 
@@ -83,3 +90,29 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+
+
+static void ConfigureNLog()
+{
+    var config = new LoggingConfiguration();
+    var env = Environment.GetEnvironmentVariables();
+    
+    // Where to save logs
+    var logFile = new FileTarget("logFile")
+    {
+        FileName = (string) env["LOG_FILE"], 
+        ArchiveFileName = (string) env["LOG_FILE_ARCHIVE"],
+        MaxArchiveFiles = 30,
+        ArchiveEvery = FileArchivePeriod.Day,
+        ArchiveNumbering = ArchiveNumberingMode.Date,
+        ArchiveDateFormat = "yyyy-MM-dd"
+    };
+
+    var logConsole = new ColoredConsoleTarget("logConsole");
+
+    config.AddRule(LogLevel.Info, LogLevel.Fatal, logFile);
+    config.AddRule(LogLevel.Info, LogLevel.Fatal, logConsole);
+    
+    LogManager.Configuration = config;
+}
