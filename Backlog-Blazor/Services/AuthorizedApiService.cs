@@ -14,7 +14,7 @@ public class AuthorizedApiService
 {
     public User User { get; set; }
     private bool _rememberUser = false;
-    
+
     private readonly HttpClient _httpClient;
     private readonly JwtSecurityTokenHandler _jwtTokenHandler;
     private readonly SessionService _sessionService;
@@ -27,15 +27,18 @@ public class AuthorizedApiService
         _sessionService = sessionService;
         _localService = localService;
         User = new User();
+    }
 
+    public async Task InitializeAsync()
+    {
         var tokenModel = new TokenModel
         {
-            JwtToken = sessionService.GetJwtToken(),
-            RefreshToken = sessionService.GetRefreshToken()
+            JwtToken = await _sessionService.GetJwtTokenAsync(),
+            RefreshToken = await _sessionService.GetRefreshTokenAsync()
         };
 
         if (string.IsNullOrWhiteSpace(tokenModel.RefreshToken))
-            tokenModel.RefreshToken = localService.GetRefreshToken();
+            tokenModel.RefreshToken = await _localService.GetRefreshTokenAsync();
 
         if (!string.IsNullOrWhiteSpace(tokenModel.RefreshToken))
             _rememberUser = true;
@@ -45,7 +48,7 @@ public class AuthorizedApiService
             && !string.IsNullOrWhiteSpace(tokenModel.RefreshToken))
         {
             // No supported way to await this. Cross your fingers for no race condition!
-            RefreshJwtToken();
+            await RefreshJwtToken();
         }
 
         if (!User.IsAuthenticated)

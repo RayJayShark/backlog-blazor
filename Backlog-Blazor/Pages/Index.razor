@@ -1,16 +1,12 @@
 ﻿@inject AuthorizedApiService AuthApiService
+@inject NavigationManager Nav
 @page "/"
 @using BacklogBlazor.Services
 
-<PageTitle>Index</PageTitle>
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        Nav.NavigateTo(AuthApiService.User.IsAuthenticated ? "backlog/list" : "login");
+    }
 
-@if (AuthApiService.User is not null && AuthApiService.User.IsAuthenticated)
-{
-    <div class="text-sm">Hello, @AuthApiService.User.Username!</div>
 }
-else
-{
-    <div class="text-sm">Hello, world!</div>
-}
-
-Welcome to your new app.
