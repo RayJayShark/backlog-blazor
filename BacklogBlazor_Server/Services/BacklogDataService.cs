@@ -235,4 +235,39 @@ public class BacklogDataService
 
         await _sqlConnection.CloseAsync();
     }
+
+    public async Task<bool> DeleteBacklog(long backlogId)
+    {
+        await _sqlConnection.OpenAsync();
+
+        var tran = await _sqlConnection.BeginTransactionAsync();
+        try
+        {
+            await _sqlConnection.ExecuteAsync("delete from backlog_item where BacklogId = @backlogId",
+                new { backlogId }, tran);
+            
+            await _sqlConnection.ExecuteAsync("delete from backlog where BacklogId = @backlogId", 
+                new { backlogId }, tran);
+
+            var gameBacklogCount = await _sqlConnection.QuerySingleAsync<int>(
+                @"select count(*)  from backlog b 
+                        cross join backlog_item bi 
+                    where b.BacklogId = @backlogId
+                        or bi.BacklogId = @backlogId", new { backlogId }, tran);
+
+            if (gameBacklogCount > 0)
+                throw new Exception("Error when deleting backlog or games");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error when deleting backlog: {Message}", ex.Message);
+            await tran.RollbackAsync();
+            await _sqlConnection.CloseAsync();
+            return false;
+        }
+
+        await tran.CommitAsync();
+        await _sqlConnection.CloseAsync();
+        return true;
+    }
 }

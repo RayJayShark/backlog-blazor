@@ -221,4 +221,9 @@ public class AuthorizedApiService
     {
         await SendRequest(HttpMethod.Post, "backlog", User.AuthTokenString, backlogModel);
     }
+
+    public async Task DeleteBacklog(long backlogId)
+    {
+        await SendRequest(HttpMethod.Delete, $"backlog/{backlogId}", User.AuthTokenString);
+    }
 }

@@ -1,23 +1,18 @@
 ﻿@using BacklogBlazor_Shared.Models
 @using BacklogBlazor.Icons
 
-@if (!string.IsNullOrWhiteSpace(_notification))
-{
-    <div class="bg-red-300 rounded-md">
-        @_notification
-        <button type="button" @onclick="@(() => _notification = string.Empty)">X</button>
-    </div>
-}
-
 <EditForm Model="_backlog" OnValidSubmit="SaveBacklog" class="@Class">
     <div class="flex flex-col">
         <div class="flex flex-row text-xl mb-4 items-center">
             <label class="mr-2 font-semibold">Title:</label>
-            <InputText @bind-Value="_backlog.Name" placeholder="Enter a title..." class="font-bold border border-slate-300 rounded p-1" />
+            <InputText @bind-Value="_backlog.Name" placeholder="Enter a title..." class="font-bold border border-slate-300 rounded p-1"/>
+            <button type="button" title="Delete Backlog" class="self-end ml-auto pb-2 text-red-700" @onclick="DisplayBacklogConfirmation">
+                <HeroIcons Icon="HeroIcons.HeroIcon.Trash_Solid"/>
+            </button>
         </div>
         <div class="flex flex-row text-lg mb-8 items-start">
             <label class="mr-2">Description:</label>
-            <InputTextArea @bind-Value="_backlog.Description" placeholder="Enter a description..." rows="2" class="resize-none border border-slate-300 rounded w-3/4 p-1" />
+            <InputTextArea @bind-Value="_backlog.Description" placeholder="Enter a description..." rows="2" class="resize-none border border-slate-300 rounded w-3/4 p-1"/>
         </div>
     </div>
 
@@ -121,12 +116,19 @@
                 <td class="border-b border-slate-400 text-center">
                     <InputNumber TValue="double" class="w-20 font-bold text-center border rounded border-slate-300" @bind-Value="@game.Game.CurrentHours" min="0"/>
                 </td>
-                <td class="border-b border-slate-400 text-center"><InputCheckbox @bind-Value="@game.Game.Completed"/></td>
+                <td class="border-b border-slate-400 text-center">
+                    <InputCheckbox @bind-Value="@game.Game.Completed"/>
+                    <button type="button" title="Remove @(game.Game.Id < 1 ? "game" : game.Game.Name)" @onclick="@(() => RemoveGame(game.Game.Rank))" class="absolute ml-[5%]">
+                        <HeroIcons Icon="HeroIcons.HeroIcon.MinusCircle_Outline" Class="text-red-700"/>
+                    </button>
+                </td>
             </tr>
         }
         <tr class>
-            <td colspan="5" class="border-b border-slate-400">
-                <button type="button" @onclick="AddGame">Add Game</button>
+            <td colspan="5" class="border-b border-slate-400 text-center">
+                <button type="button" title="Add new game" @onclick="AddGame" class="h-12">
+                    <HeroIcons Icon="HeroIcons.HeroIcon.Plus_Outline" />
+                </button>
             </td>
         </tr>
         </tbody>

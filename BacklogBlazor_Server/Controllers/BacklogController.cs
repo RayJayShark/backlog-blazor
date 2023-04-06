@@ -124,6 +124,25 @@ public class BacklogController : Controller
         return Ok(newId);
     }
 
+    [Authorize]
+    [HttpDelete("{backlogId:long}")]
+    public async Task<IActionResult> DeleteBacklog(long backlogId)
+    {
+        if (backlogId < 0)
+            return BadRequest();
+
+        var userId = await GetUserId();
+        if (userId < 0)
+            return Forbid();
+
+        if (!await _backlogDataService.IsOwner(backlogId, userId))
+            return Forbid();
+
+        var success = await _backlogDataService.DeleteBacklog(backlogId);
+
+        return success ? Ok() : StatusCode(500);
+    }
+
     #region HelperMethods
     
     private async Task<long> GetUserId()
