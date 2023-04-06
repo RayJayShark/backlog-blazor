@@ -3,8 +3,8 @@
 public class BacklogModel
 {
     public long Id { get; set; } = -1;
-    public string Name { get; set; }
-    public string Description { get; set; }
+    public string? Name { get; set; }
+    public string? Description { get; set; }
     public List<Game> Games { get; set; } = new ();
     
     // Used by frontend for permissions
