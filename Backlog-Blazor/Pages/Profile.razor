@@ -1,0 +1,66 @@
+﻿@page "/profile"
+@using BacklogBlazor.Services
+
+<h3 class="text-lg font-bold">@AuthorizedApiService.User.Username</h3>
+
+@if (string.IsNullOrWhiteSpace(AuthorizedApiService.User.AvatarUrl))
+{
+    <img alt="Default Avatar" src="images/DefaultAvatar.png"/>
+}
+else
+{
+    <img alt="@AuthorizedApiService.User.Username's Avatar" src="@AuthorizedApiService.User.AvatarUrl"/>
+}
+
+@if (!AuthorizedApiService.User.IsDiscordUser)
+{
+    <div class="relative w-36 h-8 group">
+        <div class="absolute top-0 left-0 w-full h-full leading-8 text-white font-bold drop-shadow-md bg-amber-500 rounded-md text-center align-middle group-hover:bg-amber-400">Upload Avatar</div>
+        <InputFile class="absolute top-0 left-0 w-full h-full text-[0] cursor-pointer rounded-md opacity-0" disabled="@_disableUpload" OnChange="UploadAvatar" accept="@string.Join(',', AllowedExtensions)"/>
+    </div>
+}
+
+@code {
+    private readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".gif" };
+    
+    [Inject] private AuthorizedApiService AuthorizedApiService { get; set; }
+    [Inject] private NavigationManager Nav { get; set; }
+    [Inject] private NotificationService NotificationService { get; set; }
+
+    private bool _disableUpload = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!AuthorizedApiService.RequireAuthentication(Nav))
+            return;
+    }
+
+    private async Task UploadAvatar(InputFileChangeEventArgs args)
+    {
+        if (AllowedExtensions.All(ext => ext != Path.GetExtension(args.File.Name).ToLower()))
+        {
+            await NotificationService.DisplayNotification("File type not allowed, must be a JPG, PNG, or GIF", NotificationLevel.Error);
+            return;
+        }
+
+        _disableUpload = true;
+        
+        try
+        {
+            await AuthorizedApiService.UpdateAvatar(args.File);
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.DisplayNotification("Error uploading avatar", NotificationLevel.Error);
+            _disableUpload = false;
+            return;
+        }
+
+        // Refresh the token to get the updated avatar
+        await AuthorizedApiService.RefreshJwtToken();
+
+        await NotificationService.DisplayNotification("Avatar changed successfully!", NotificationLevel.Success);
+
+        _disableUpload = false;
+    }
+}

@@ -9,7 +9,7 @@ public class DiscordUser
     public string Email { get; set; }
     public int Discriminator { get; set; }
     public string? Avatar { get; set; }
-    public string? AvatarUrl => Avatar is not null ? $"https://cdn.discordapp.com/avatars/{Avatar}" : null;
+    public string? AvatarUrl => Avatar is not null ? $"https://cdn.discordapp.com/avatars/{Id}/{Avatar}.png" : null;
     public int Flags { get; set; }
     public string? Banner { get; set; }
     public bool Bot { get; set; }

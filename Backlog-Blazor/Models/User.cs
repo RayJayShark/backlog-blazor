@@ -6,6 +6,13 @@ public class User
 {
     public string? Username => AuthToken?.Claims.FirstOrDefault(c => c.Type == "username")?.Value 
                                ?? RefreshToken?.Claims.FirstOrDefault(c => c.Type == "username")?.Value;
+    
+    public bool IsDiscordUser => bool.Parse((AuthToken?.Claims.FirstOrDefault(c => c.Type == "isDiscordUser")?.Value
+                                             ?? RefreshToken?.Claims.FirstOrDefault(c => c.Type == "username")?.Value) ?? "false");
+    
+    public string? AvatarUrl => AuthToken?.Claims.FirstOrDefault(c => c.Type == "avatarUrl")?.Value 
+                               ?? RefreshToken?.Claims.FirstOrDefault(c => c.Type == "avatarUrl")?.Value;
+    
     public bool IsAuthenticated => IsAuthTokenValid
                                    || IsRefreshTokenValid;
     

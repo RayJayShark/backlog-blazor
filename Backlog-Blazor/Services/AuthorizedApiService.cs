@@ -2,11 +2,11 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Security.Authentication;
 using BacklogBlazor_Shared.Models;
 using BacklogBlazor_Shared.Models.Authentication;
 using BacklogBlazor.Models;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace BacklogBlazor.Services;
 
@@ -106,7 +106,7 @@ public class AuthorizedApiService
     {
         if (!User.IsAuthenticated)
         {
-            nav.NavigateTo("unauthorized");
+            nav.NavigateTo("login");
             return false;
         }
 
@@ -139,7 +139,17 @@ public class AuthorizedApiService
 
         if (payload is not null)
         {
-            request.Content = JsonContent.Create(payload);
+            if (payload is IBrowserFile file)
+            {
+                var content = new MultipartFormDataContent();
+                content.Add(new StreamContent(file.OpenReadStream()), "\"avatarFile\"", file.Name);
+                content.First().Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+                request.Content = content;
+            }
+            else
+            {
+                request.Content = JsonContent.Create(payload);
+            }
         }
 
         var response = await _httpClient.SendAsync(request);
@@ -225,5 +235,10 @@ public class AuthorizedApiService
     public async Task DeleteBacklog(long backlogId)
     {
         await SendRequest(HttpMethod.Delete, $"backlog/{backlogId}", User.AuthTokenString);
+    }
+
+    public async Task UpdateAvatar(IBrowserFile file)
+    {
+        await SendRequest(HttpMethod.Post, "user/avatar", User.AuthTokenString, file);
     }
 }

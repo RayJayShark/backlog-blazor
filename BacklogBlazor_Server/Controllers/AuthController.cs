@@ -16,14 +16,16 @@ namespace BacklogBlazor_Server.Controllers;
 public class AuthController : Controller
 {
     private readonly AuthDataService _authDataService;
+    private readonly UserDataService _userDataService;
     private readonly ThirdPartyService _thirdPartyService;
     private readonly ILogger<AuthController> _logger;
     private readonly string _jwtSecret;
     private readonly string _refreshSecret;
 
-    public AuthController(AuthDataService authDataService, ThirdPartyService thirdPartyService, ILogger<AuthController> logger)
+    public AuthController(AuthDataService authDataService, UserDataService userDataService, ThirdPartyService thirdPartyService, ILogger<AuthController> logger)
     {
         _authDataService = authDataService;
+        _userDataService = userDataService;
         _thirdPartyService = thirdPartyService;
         _logger = logger;
         _jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET");
@@ -44,10 +46,14 @@ public class AuthController : Controller
         if (!validLogin)
             return Unauthorized();
 
+        var isDiscordUser = await _userDataService.IsDiscordUser(passwordHash.UserId);
+
+        var avatarUrl = await _userDataService.GetUserAvatarUrl(passwordHash.UserId);
+
         var tokenModel = new TokenModel
         {
-            JwtToken = GenerateJwtToken(passwordHash.UserId, passwordHash.Username),
-            RefreshToken = GenerateRefreshToken(passwordHash.UserId, passwordHash.Username)
+            JwtToken = GenerateJwtToken(passwordHash.UserId, passwordHash.Username, isDiscordUser, avatarUrl),
+            RefreshToken = GenerateRefreshToken(passwordHash.UserId, passwordHash.Username, isDiscordUser, avatarUrl)
         };
 
         return Ok(tokenModel);
@@ -82,8 +88,8 @@ public class AuthController : Controller
 
         var tokenModel = new TokenModel
         {
-            JwtToken = GenerateJwtToken(user.UserId, user.Username),
-            RefreshToken = GenerateRefreshToken(user.UserId, user.Username)
+            JwtToken = GenerateJwtToken(user.UserId, user.Username, true, user.AvatarUrl),
+            RefreshToken = GenerateRefreshToken(user.UserId, user.Username, true, user.AvatarUrl)
         };
         
         return Ok(tokenModel);
@@ -107,8 +113,8 @@ public class AuthController : Controller
 
         var tokenModel = new TokenModel
         {
-            JwtToken = GenerateJwtToken(userId.Value, registerRequest.Username),
-            RefreshToken = GenerateRefreshToken(userId.Value, registerRequest.Username)
+            JwtToken = GenerateJwtToken(userId.Value, registerRequest.Username, false),
+            RefreshToken = GenerateRefreshToken(userId.Value, registerRequest.Username, false)
         };
 
         return Ok(tokenModel);
@@ -129,6 +135,14 @@ public class AuthController : Controller
 
         if (string.IsNullOrWhiteSpace(username))
             return Forbid();
+        
+        var isDiscordUserString = User.Claims.FirstOrDefault(c => c.Type == "userId")?.Value;
+        if (!bool.TryParse(isDiscordUserString, out var isDiscordUserBool))
+        {
+            isDiscordUserBool = await _userDataService.IsDiscordUser(userIdLong);
+        }
+
+        var avatarUrl = await _userDataService.GetUserAvatarUrl(userIdLong);
 
         var createdAtString = User.Claims.FirstOrDefault(c => c.Type == "createdAt")?.Value;
         if (!DateTime.TryParse(createdAtString, out var createdAtDate))
@@ -136,8 +150,8 @@ public class AuthController : Controller
 
         var tokenModel = new TokenModel
         {
-            JwtToken = GenerateJwtToken(userIdLong, username),
-            RefreshToken = GenerateRefreshToken(userIdLong, username, createdAtDate.ToLocalTime())
+            JwtToken = GenerateJwtToken(userIdLong, username, isDiscordUserBool, avatarUrl),
+            RefreshToken = GenerateRefreshToken(userIdLong, username, isDiscordUserBool, avatarUrl, createdAtDate.ToLocalTime())
         };
 
         return Ok(tokenModel);
@@ -145,7 +159,7 @@ public class AuthController : Controller
     
     #region HelperMethods
 
-    private string GenerateJwtToken(long userId, string username,  DateTime? createdAt = null)
+    private string GenerateJwtToken(long userId, string username, bool isDiscordUser, string? avatarUrl = "",  DateTime? createdAt = null)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -156,6 +170,8 @@ public class AuthController : Controller
         {
             new("userId", userId.ToString()),
             new("username", username),
+            new("isDiscordUser", isDiscordUser.ToString()),
+            new("avatarUrl", avatarUrl ?? string.Empty),
             new("createdAt", createdAtTime),
             new("updatedAt", currentTime)
         };
@@ -169,7 +185,7 @@ public class AuthController : Controller
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
     
-    private string GenerateRefreshToken(long userId, string username, DateTime? createdAt = null)
+    private string GenerateRefreshToken(long userId, string username, bool isDiscordUser, string? avatarUrl = "", DateTime? createdAt = null)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_refreshSecret));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -180,6 +196,8 @@ public class AuthController : Controller
         {
             new("userId", userId.ToString()),
             new("username", username),
+            new("isDiscordUser", isDiscordUser.ToString()),
+            new("avatarUrl", avatarUrl ?? string.Empty),
             new("createdAt", createdAtTime),
             new("updatedAt", currentTime)
         };
