@@ -50,7 +50,7 @@ public class UserController : Controller
             return StatusCode(500);
         }
 
-        await _userDataService.UpdateUserAvatar(userId, _frontend.TrimEnd('/') + $"/avatar/{fileName}");
+        await _userDataService.UpdateUserAvatar(userId, _frontend.TrimEnd('/') + $"/avatars/{fileName}");
 
         return Ok();
     }
