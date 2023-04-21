@@ -110,9 +110,21 @@ public partial class BacklogEdit : ComponentBase
         _typeaheadGames.Insert(clampedRank - 1, game);
         
         // Shift all necessary game ranks
-        for (var i = gameIndex; i < clampedRank - 1; i++)
+        // If moved forward
+        if (rank > gameIndex + 1)
         {
-            _typeaheadGames[i].Game.Rank--;
+            for (var i = gameIndex; i < clampedRank - 1; i++)
+            {
+                _typeaheadGames[i].Game.Rank--;
+            }
+        }
+        // If moved backward
+        else
+        {
+            for (var i = clampedRank; i < gameIndex + 1; i++)
+            {
+                _typeaheadGames[i].Game.Rank++;
+            }
         }
     }
 
