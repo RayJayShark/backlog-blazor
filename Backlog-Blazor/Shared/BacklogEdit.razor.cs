@@ -135,7 +135,11 @@ public partial class BacklogEdit : ComponentBase
         typeaheadGame.DisableTypeahead = false;
         _typeaheadGames.Add(typeaheadGame);
 
-        _refreshIcons = new HeroIcons[_typeaheadGames.Count + 1];
+        var newRefreshIcons = new HeroIcons[_typeaheadGames.Count + 1];
+        for (var i = 0; i < _refreshIcons.Length; i++)
+            newRefreshIcons[i] = _refreshIcons[i];
+
+        _refreshIcons = newRefreshIcons;
     }
 
     private void RemoveGame(int rank)
