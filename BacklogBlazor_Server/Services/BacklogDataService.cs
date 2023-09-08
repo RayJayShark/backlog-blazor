@@ -200,6 +200,25 @@ public class BacklogDataService
         return backlogs;
     }
 
+    public async Task<List<RecentBacklog>> GetUserRecentBacklogs(long userId, int amount = 3)
+    {
+        await _sqlConnection.OpenAsync();
+
+        var backlogEnum = await _sqlConnection.QueryAsync<RecentBacklog>(
+            @"select
+                    BacklogId as Id, 
+                    Name
+                from backlog
+                where OwnerUserId = @userId
+                order by UpdatedDate desc
+                limit @amount",
+            new { userId, amount });
+
+        await _sqlConnection.CloseAsync();
+
+        return backlogEnum.ToList();
+    }
+
     public async Task<bool> IsOwner(long backlogId, long userId)
     {
         await _sqlConnection.OpenAsync();

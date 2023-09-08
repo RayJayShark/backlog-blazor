@@ -106,6 +106,20 @@ public class BacklogController : Controller
 
         return Ok(backlogs);
     }
+
+    [Authorize]
+    [HttpGet("recent")]
+    public async Task<IActionResult> GetUserRecentBacklogs()
+    {
+        var userId = await GetUserId();
+
+        if (userId < 0)
+            return Forbid();
+
+        var recentBacklogs = await _backlogDataService.GetUserRecentBacklogs(userId);
+
+        return Ok(recentBacklogs);
+    }
     
     [Authorize]
     [HttpGet("next")]

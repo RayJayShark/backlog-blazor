@@ -1,6 +1,7 @@
 ﻿@using BacklogBlazor.Icons
 @using BacklogBlazor.Services
 @using System.Net
+@using BacklogBlazor_Shared.Models
 
 <nav class="bg-amber-500">
     @* Top Bar *@
@@ -51,11 +52,22 @@
         @if (AuthorizedApiService.User.IsAuthenticated)
         {
             <button type="button" title="Create New Backlog" @onclick="CreateNewBacklog">
-                <HeroIcons Icon="HeroIcons.HeroIcon.Plus_Outline" Class="p-1 drop-shadow border rounded-md border-slate-700 bg-amber-500 hover:bg-amber-600 hover:border-2 hover:drop-shadow-md"/>
+                <HeroIcons Icon="HeroIcons.HeroIcon.Plus_Outline" Class="p-1 mr-2 drop-shadow border rounded-md border-slate-700 bg-amber-500 hover:bg-amber-600 hover:border-2 hover:drop-shadow-md"/>
             </button>
-            <div class="px-10">Test1</div>
-            <div class="px-10">Test2</div>
-            <NavLink href="backlog/list">Your Backlogs</NavLink>
+            if (_recentBacklogs.Any())
+            {
+                <div class="mx-4">|</div>
+                foreach (var recentBacklog in _recentBacklogs)
+                {
+                    <NavLink href="@($"backlog/{recentBacklog.Id}")">
+                        <span class="@("p-[0.35rem] mx-4 font-semibold drop-shadow border rounded-md border-slate-700 bg-amber-400 hover:bg-amber-300 " + (string.IsNullOrEmpty(recentBacklog.Name) ? "italic" : string.Empty))">@(recentBacklog.Name ?? "Unnamed Backlog")</span>
+                    </NavLink>
+                }
+            }
+            <div class="mx-4">|</div>
+            <NavLink href="backlog/list">
+                <span class="p-[0.35rem] mx-4 font-bold drop-shadow border rounded-md border-slate-700 bg-amber-400 hover:bg-amber-300">Your Backlogs</span>
+            </NavLink>
         }
         else
         {
@@ -68,6 +80,8 @@
     private bool _collapseNavMenu = true;
 
     private string? NavMenuCssClass => _collapseNavMenu ? "hidden" : null;
+
+    private List<RecentBacklog> _recentBacklogs = new();
 
     [Inject] 
     private NavigationManager Nav { get; set; }    
@@ -83,9 +97,15 @@
         Nav.LocationChanged += CloseNavMenu;
     }
 
-    private void ToggleNavMenu()
+    private async Task ToggleNavMenu()
     {
         _collapseNavMenu = !_collapseNavMenu;
+
+        if (_collapseNavMenu == false && AuthorizedApiService.User.IsAuthenticated)
+        {
+            _recentBacklogs = await AuthorizedApiService.GetUserRecentBacklogs();
+        }
+        
         StateHasChanged();
     }
 

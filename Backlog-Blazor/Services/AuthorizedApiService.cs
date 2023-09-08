@@ -227,6 +227,11 @@ public class AuthorizedApiService
         return await SendRequest<List<BacklogModel>>(HttpMethod.Get, "backlog/list", User.AuthTokenString);
     }
 
+    public async Task<List<RecentBacklog>> GetUserRecentBacklogs()
+    {
+        return await SendRequest<List<RecentBacklog>>(HttpMethod.Get, "backlog/recent", User.AuthTokenString);
+    }
+
     public async Task SaveBacklog(BacklogModel backlogModel)
     {
         await SendRequest(HttpMethod.Post, "backlog", User.AuthTokenString, backlogModel);
