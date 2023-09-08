@@ -26,6 +26,10 @@ else
     [Parameter]
     [SupplyParameterFromQuery]
     public bool Edit { get; set; } = false;
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public bool NewBacklog { get; set; } = false;
     
     [Inject] private AuthorizedApiService AuthorizedApiService { get; set; }
     [Inject] private NotificationService NotificationService { get; set; }
@@ -33,7 +37,7 @@ else
     private BacklogModel _backlogModel = new BacklogModel();
     private bool _loading = false;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
         await GetBacklog();
     }

@@ -214,7 +214,7 @@ public class AuthorizedApiService
             return;
         }
 
-        nav.NavigateTo($"backlog/{newId}?edit=true");
+        nav.NavigateTo($"backlog/{newId}?newBacklog=true&edit=true");
     }
     
     public async Task<BacklogModel> GetBacklog(long backlogId)
