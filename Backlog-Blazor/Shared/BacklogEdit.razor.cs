@@ -7,6 +7,7 @@ using BacklogBlazor.Icons;
 using BacklogBlazor.Models;
 using BacklogBlazor.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 
 namespace BacklogBlazor.Shared;
@@ -43,6 +44,8 @@ public partial class BacklogEdit : ComponentBase
     private bool _disableSave = false;
     private HeroIcons[] _refreshIcons;
     private bool _disableRefresh = false;
+    private IJSObjectReference _jsModule;
+    private int _draggedItemIndex = -1;
 
     public BacklogEdit()
     {
@@ -52,6 +55,12 @@ public partial class BacklogEdit : ComponentBase
     protected override void OnInitialized()
     {
         _refreshIcons = new HeroIcons[_typeaheadGames.Count + 1];
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
+            "import", "./Shared/BacklogEdit.razor.js");
     }
 
     private void OnBacklogChanged()
@@ -290,5 +299,21 @@ public partial class BacklogEdit : ComponentBase
 
         _disableRefresh = false;
         await _refreshIcons[iconToSpin].StopSpin();
+    }
+
+    private async Task DropItem()
+    {
+        if (_draggedItemIndex < 0)
+            return;
+        
+        var dropPosition = await _jsModule.InvokeAsync<int?>("GetDropPosition");
+        if (dropPosition is null || _draggedItemIndex == dropPosition - 1) // Already in position
+        {
+            _draggedItemIndex = -1;
+            return;
+        }
+
+        RankChanged(_draggedItemIndex, dropPosition.Value);
+        _draggedItemIndex = -1;
     }
 }

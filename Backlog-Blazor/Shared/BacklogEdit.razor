@@ -15,17 +15,18 @@
             <InputTextArea @bind-Value="_backlog.Description" placeholder="Enter a description..." rows="2" class="resize-none border border-slate-300 rounded w-3/4 p-1"/>
         </div>
     </div>
-
-    <table class="relative isolate z-10 border border-slate-400 border-separate border-spacing-0 bg-slate-50 rounded drop-shadow-md w-full">
-        <thead>
-        <tr class="divide-x divide-slate-400">
-            <th class="border-b border-slate-400 w-6">Rank</th>
-            <th class="border-b border-slate-400 w-1/2 min-w-[400px]">
-                <div class="px-2 flex justify-between items-center">
+    
+    <ul id="game-list" class="list-none w-full mb-4" @onmouseup="@DropItem">
+        <li class="flex flex-row items-center text-center" draggable="false">
+            <div class="w-28 flex-initial flex justify-center">
+                <div class="w-fit font-bold bg-slate-50 border border-slate-400 rounded-md drop-shadow-md px-3 py-1">Rank</div>
+            </div>
+            <div class="w-1/2 flex-auto">
+                <div class="flex justify-between items-center px-4">
                     @if (_typeaheadGames.Any(g => g.Game.Id >= 0))
                     {
                         <div>@*This exists to center the heading*@</div>
-                        <span>Game</span>
+                        <div class="font-bold bg-slate-50 border border-slate-400 rounded-md drop-shadow-md px-4 py-1">Game</div>
                         <button type="button" class="mx-4 my-2" title="Refresh data for all games" disabled="@_disableRefresh"
                                 @onclick="@(() => RefreshGamesData(0, Backlog.Games.ToArray()))">
                             <HeroIcons @ref="_refreshIcons[0]" Icon="HeroIcons.HeroIcon.ArrowPath_Outline"/>
@@ -36,24 +37,31 @@
                         <span>Game</span>
                     }
                 </div>
-            </th>
-            <th class="border-b border-slate-400 w-1/6">Estimated Hours</th>
-            <th class="border-b border-slate-400 w-1/6">Current Hours</th>
-            <th class="border-b border-slate-400 w-6">Completed?</th>
-        </tr>
-        </thead>
-        <tbody>
+            </div>
+            <div class="w-[10%] flex-initial flex justify-center">
+                <div class="w-fit font-bold bg-slate-50 border border-slate-400 rounded-md drop-shadow-md px-3 py-1">Estimated Hours</div>
+            </div>
+            <div class="w-[10%] flex-initial flex justify-center">
+                <div class="w-fit font-bold bg-slate-50 border border-slate-400 rounded-md drop-shadow-md px-3 py-1">Current Hours</div>
+            </div>
+            <div class="w-28 flex-initial flex justify-center">
+                <div class="w-fit font-bold bg-slate-50 border border-slate-400 rounded-md drop-shadow-md px-3 py-1">Completed?</div>
+            </div>
+        </li>
         @foreach (var game in _typeaheadGames)
         {
-            <tr class="divide-x divide-slate-400">
-                <td class="border-b border-slate-400">
+            <li data-rank="@game.Game.Rank" class="draggable h-20 flex flex-row border rounded-md border-slate-400 divide-x divide-slate-400 shadow-md bg-slate-50 my-4 items-center text-center" draggable="false">
+                <div class="w-28 flex-initial">
                     <div class="flex flex-row justify-evenly">
-                        <button type="button"><HeroIcons Icon="HeroIcons.HeroIcon.Bars2_Outline" Class="w-8 h-7 p-1 border rounded border-slate-400 hover:border-slate-600"/></button>
+                        <button type="button" class="drag-button"
+                                @onmousedown="@(() => _draggedItemIndex = _typeaheadGames.IndexOf(game))">
+                            <HeroIcons Icon="HeroIcons.HeroIcon.Bars2_Outline" Class="w-8 h-7 p-1 cursor-pointer border rounded border-slate-400 hover:border-slate-600"/>
+                        </button>
                         <InputNumber TValue="int" class="w-8 font-bold text-center border rounded border-slate-300" Value="@game.Game.Rank" ValueChanged="@(rank => RankChanged(_typeaheadGames.IndexOf(game), rank))" ValueExpression="() => game.Game.Rank" min="1" />
                     </div>
-                </td>
-                <td class="border-b border-slate-400 px-2 py-1">
-                    <div class="flex justify-between">
+                </div>
+                <div class="w-1/2 h-full flex-auto flex items-center px-4">
+                    <div class="w-full flex justify-between">
                         @if (game.DisableTypeahead)
                         {
                             <BacklogGame Game="@game.Game" OnTimeClicked="@(newTime => game.Game.EstimateCompleteHours = newTime)"/>
@@ -109,39 +117,27 @@
                             </button>
                         }
                     </div>
-                </td>
-                <td class="border-b border-slate-400 text-center">
+                </div>
+                <div class="w-[10%] h-full flex-initial flex place-content-center place-items-center">
                     <InputNumber TValue="double" class="w-20 font-bold text-center border rounded border-slate-300" @bind-Value="@game.Game.EstimateCompleteHours" min="0"/>
-                </td>
-                <td class="border-b border-slate-400 text-center">
+                </div>
+                <div class="w-[10%] h-full flex-initial flex place-content-center place-items-center">
                     <InputNumber TValue="double" class="w-20 font-bold text-center border rounded border-slate-300" @bind-Value="@game.Game.CurrentHours" min="0"/>
-                </td>
-                <td class="border-b border-slate-400 text-center">
+                </div>
+                <div class="w-28 h-full flex-initial flex place-content-center place-items-center">
                     <InputCheckbox @bind-Value="@game.Game.Completed"/>
-                    <button type="button" title="Remove @(game.Game.Id < 1 ? "game" : game.Game.Name)" @onclick="@(() => RemoveGame(game.Game.Rank))" class="absolute ml-[5%]">
+                    <button type="button" title="Remove @(game.Game.Id < 1 ? "game" : game.Game.Name)" @onclick="@(() => RemoveGame(game.Game.Rank))" class="absolute ml-36">
                         <HeroIcons Icon="HeroIcons.HeroIcon.MinusCircle_Outline" Class="text-red-700"/>
                     </button>
-                </td>
-            </tr>
+                </div>
+            </li>
         }
-        <tr class>
-            <td colspan="5" class="border-b border-slate-400 text-center">
-                <button type="button" title="Add new game" @onclick="AddGame" class="h-12">
-                    <HeroIcons Icon="HeroIcons.HeroIcon.Plus_Outline" />
-                </button>
-            </td>
-        </tr>
-        </tbody>
-        <tfoot>
-        <tr class="divide-x divide-slate-400">
-            <td class="font-bold text-center">Totals</td>
-            <td class="font-bold text-center">@_typeaheadGames.Count Games</td>
-            <td class="font-bold text-center">@_typeaheadGames.Sum(g => g.Game.EstimateCompleteHours).ToString("0.0")</td>
-            <td class="font-bold text-center">@_typeaheadGames.Sum(g => g.Game.CurrentHours).ToString("0.0")</td>
-            <td class="font-bold text-center" title="Completed/Total">@_typeaheadGames.Count(g => g.Game.Completed)/@_typeaheadGames.Count</td>
-        </tr>
-        </tfoot>
-    </table>
+        <li draggable="false">
+            <button type="button" title="Add new game" @onclick="AddGame" class="w-12 h-12 flex border border-slate-400 bg-slate-50 rounded-md justify-center items-center">
+                <HeroIcons Icon="HeroIcons.HeroIcon.Plus_Outline" />
+            </button>
+        </li>
+    </ul>
 
     <div class="isolate">
         <button type="submit" disabled="@_disableSave" class="mt-2 p-2 text-white font-bold drop-shadow-md bg-amber-600 rounded-lg hover:bg-amber-700 disabled:opacity-50 disabled:bg-amber-800"><span class="drop-shadow-lg">Save Backlog</span></button>
