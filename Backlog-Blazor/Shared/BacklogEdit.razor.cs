@@ -61,6 +61,7 @@ public partial class BacklogEdit : ComponentBase
     {
         _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
             "import", "./Shared/BacklogEdit.razor.js");
+        await _jsModule.InvokeAsync<object>("SetupDropItem", DotNetObjectReference.Create(this), "DropItem").ConfigureAwait(false);
     }
 
     private void OnBacklogChanged()
@@ -301,7 +302,8 @@ public partial class BacklogEdit : ComponentBase
         await _refreshIcons[iconToSpin].StopSpin();
     }
 
-    private async Task DropItem()
+    [JSInvokable]
+    public async Task DropItem()
     {
         if (_draggedItemIndex < 0)
             return;

@@ -138,3 +138,5 @@ let UnFollowMouse = (event) => {
 }
 
 export let GetDropPosition = () => Number(dropPosition);
+
+export let SetupDropItem = (instance, method) => instance.invokeMethodAsync(method);
