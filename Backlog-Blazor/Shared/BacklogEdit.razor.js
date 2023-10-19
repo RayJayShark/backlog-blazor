@@ -8,42 +8,58 @@ let xOffset = 0;
 let yOffset = 0;
 let dropPosition = 0;
 
-// Setup dragging
-for (let button of dragButtons) {
-    button.addEventListener("mousedown", (event) => {
-        draggedItem = GetParentLi(event.target);
-        draggedItem.classList.remove("draggable");
-        
-        // Calculate the offset to have the mouse over the drag button while dragging
-        let targetRect = event.target.getBoundingClientRect();
-        let draggedRect = draggedItem.getBoundingClientRect();
-        let draggedStyles = window.getComputedStyle(draggedItem);
-        draggedItemWidth = draggedRect.width;
-        xOffset = draggedRect.x - targetRect.x - Number(draggedStyles.marginLeft.replace("px", "")) - (targetRect.width / 2);
-        yOffset = draggedRect.y - targetRect.y - Number(draggedStyles.marginTop.replace("px", "")) - (targetRect.height / 2);
-        
-        document.addEventListener("mousemove", FollowMouse);
-        
-        draggedItem.style.pointerEvents = "none";   // Stops the mouseover from picking up the dragged item
-        
-        // Create shadow copy to give preview of drop
-        draggedItemCopy = draggedItem.cloneNode(true);
-        draggedItemCopy.id = null;
-        draggedItemCopy.style.opacity = "0.5";
-        draggedItemCopy.classList.remove("draggable");
-        gameList.appendChild(draggedItemCopy);
-        draggedItem.after(draggedItemCopy);
+// Blazor Callback Variables
+let pageInstance = null;
+let pageMethod = null;
 
-        // Set initial styles for the dragged item
-        draggedItem.style.position = "absolute";
-        draggedItem.style.zIndex = "50";
-        draggedItem.style.minWidth = `${draggedItemWidth}px`;
-        draggedItem.style.left = `${event.pageX + xOffset}px`;
-        draggedItem.style.top = `${event.pageY + yOffset}px`;
-    });
+export const SetupDragging = () => {
+    for (let button of dragButtons) {
+        
+        // Only add if it doesn't already exist
+        if (button.getAttribute("listenerAdded") === "true") {
+            continue;
+        }
+        
+        button.setAttribute("listenerAdded", "true")
+        
+        button.addEventListener("mousedown", (event) => {
+            draggedItem = GetParentLi(event.target);
+            draggedItem.classList.remove("draggable");
+
+            // Calculate the offset to have the mouse over the drag button while dragging
+            let targetRect = event.target.getBoundingClientRect();
+            let draggedRect = draggedItem.getBoundingClientRect();
+            let draggedStyles = window.getComputedStyle(draggedItem);
+            draggedItemWidth = draggedRect.width;
+            xOffset = draggedRect.x - targetRect.x - Number(draggedStyles.marginLeft.replace("px", "")) - (targetRect.width / 2);
+            yOffset = draggedRect.y - targetRect.y - Number(draggedStyles.marginTop.replace("px", "")) - (targetRect.height / 2);
+
+            document.addEventListener("mousemove", FollowMouse);
+
+            draggedItem.style.pointerEvents = "none";   // Stops the mouseover from picking up the dragged item
+
+            // Create shadow copy to give preview of drop
+            draggedItemCopy = draggedItem.cloneNode(true);
+            draggedItemCopy.id = null;
+            draggedItemCopy.style.opacity = "0.5";
+            draggedItemCopy.classList.remove("draggable");
+            gameList.appendChild(draggedItemCopy);
+            draggedItem.after(draggedItemCopy);
+
+            // Set initial styles for the dragged item
+            draggedItem.style.position = "absolute";
+            draggedItem.style.zIndex = "50";
+            draggedItem.style.minWidth = `${draggedItemWidth}px`;
+            draggedItem.style.left = `${event.pageX + xOffset}px`;
+            draggedItem.style.top = `${event.pageY + yOffset}px`;
+        });
+    }
 }
 
 document.addEventListener("mouseup", (event) => {
+    // Invoke Blazor Method
+    pageInstance.invokeMethodAsync(pageMethod);
+    
     UnFollowMouse();
     draggedItem = null
     
@@ -139,4 +155,7 @@ let UnFollowMouse = (event) => {
 
 export let GetDropPosition = () => Number(dropPosition);
 
-export let SetupDropItem = (instance, method) => instance.invokeMethodAsync(method);
+export let SetupDropItem = (instance, method) => {
+    pageInstance = instance;
+    pageMethod = method;
+}

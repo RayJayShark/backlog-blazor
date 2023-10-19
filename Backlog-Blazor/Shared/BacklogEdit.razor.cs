@@ -61,6 +61,7 @@ public partial class BacklogEdit : ComponentBase
     {
         _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
             "import", "./Shared/BacklogEdit.razor.js");
+        await _jsModule.InvokeVoidAsync("SetupDragging");
         await _jsModule.InvokeAsync<object>("SetupDropItem", DotNetObjectReference.Create(this), "DropItem").ConfigureAwait(false);
     }
 
@@ -317,5 +318,6 @@ public partial class BacklogEdit : ComponentBase
 
         RankChanged(_draggedItemIndex, dropPosition.Value);
         _draggedItemIndex = -1;
+        StateHasChanged();
     }
 }
