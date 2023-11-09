@@ -33,6 +33,12 @@ public partial class BacklogEdit : ComponentBase
     [Parameter] 
     public string Class { get; set; }
 
+    [Parameter] 
+    public bool HideBacklog { get; set; } = false;
+
+    [Parameter] 
+    public bool HideCompleted { get; set; } = true;
+
     [Inject] private HttpClient HttpClient { get; set; }
     [Inject] private AuthorizedApiService AuthorizedApiService { get; set; }
     [Inject] private NotificationService NotificationService { get; set; }
@@ -42,7 +48,6 @@ public partial class BacklogEdit : ComponentBase
     private event Action BacklogChanged;
     private List<TypeaheadGame> _typeaheadGames = new();
     private bool _disableSave = false;
-    private HeroIcons[] _refreshIcons;
     private bool _disableRefresh = false;
     private IJSObjectReference _jsModule;
     private int _draggedItemIndex = -1;
@@ -51,12 +56,7 @@ public partial class BacklogEdit : ComponentBase
     {
         BacklogChanged = OnBacklogChanged;
     }
-
-    protected override void OnInitialized()
-    {
-        _refreshIcons = new HeroIcons[_typeaheadGames.Count + 1];
-    }
-
+    
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
@@ -139,18 +139,43 @@ public partial class BacklogEdit : ComponentBase
         }
     }
 
+    private async Task MoveGameToCompleted(TypeaheadGame game)
+    {
+        if (game.Game.Id < 0)
+        {
+            await NotificationService.DisplayNotification("Cannot mark game as completed: Please populate game before marking as complete", NotificationLevel.Warning);
+            return;
+        }
+        
+        _backlog.CompletedGames.Add(game.Game);
+        
+        RemoveGame(game.Game.Rank);
+        StateHasChanged();
+    }
+
+    private async Task MoveGameToBacklog(Game game)
+    {
+        AddGame();
+        _typeaheadGames[^1].Game = game;
+        _typeaheadGames[^1].DisableTypeahead = true;
+        RankChanged(_typeaheadGames.Count - 1, 1);  // Move to top of the list
+
+        var success = _backlog.CompletedGames.Remove(game);
+        if (!success)
+        {
+            RemoveGame(1);
+            await NotificationService.DisplayNotification("Error moving game back to backlog", NotificationLevel.Error);
+        }
+        
+        StateHasChanged();
+    }
+
     private void AddGame()
     {
         var typeaheadGame = new TypeaheadGame();
         typeaheadGame.Game.Rank = _typeaheadGames.Count + 1;
         typeaheadGame.DisableTypeahead = false;
         _typeaheadGames.Add(typeaheadGame);
-
-        var newRefreshIcons = new HeroIcons[_typeaheadGames.Count + 1];
-        for (var i = 0; i < _refreshIcons.Length; i++)
-            newRefreshIcons[i] = _refreshIcons[i];
-
-        _refreshIcons = newRefreshIcons;
     }
 
     private void RemoveGame(int rank)
@@ -264,10 +289,10 @@ public partial class BacklogEdit : ComponentBase
         StateHasChanged();
     }
     
-    private async Task RefreshGamesData(int iconToSpin, params Game[] games)
+    private async Task RefreshGamesData(string iconToSpin, params Game[] games)
     {
         _disableRefresh = true;
-        await _refreshIcons[iconToSpin].Spin();
+        await _jsModule.InvokeVoidAsync("SpinRefreshIcon", iconToSpin);
         
         try
         {
@@ -277,8 +302,17 @@ public partial class BacklogEdit : ComponentBase
 
             foreach (var game in updatedGames)
             {
+                // Find the game in the lists and update
                 var index = _typeaheadGames.FindIndex(g => g.Game.Id == game.Id);
-                _typeaheadGames[index].Game = game;
+                if (index >= 0)
+                {
+                    _typeaheadGames[index].Game = game;
+                }
+                else
+                {
+                    index = _backlog.CompletedGames.FindIndex(g => g.Id == game.Id);
+                    _backlog.CompletedGames[index] = game;
+                }
             }
         }
         catch (HttpRequestException ex)
@@ -300,7 +334,7 @@ public partial class BacklogEdit : ComponentBase
         }
 
         _disableRefresh = false;
-        await _refreshIcons[iconToSpin].StopSpin();
+        await _jsModule.InvokeVoidAsync("StopSpinRefreshIcon", iconToSpin);
     }
 
     [JSInvokable]

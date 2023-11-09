@@ -59,8 +59,7 @@ public class GamesController : Controller
                 Complete100Seconds = gameData.Complete100Seconds,
                 CompleteAllSeconds = gameData.CompleteAllSeconds,
                 EstimateCompleteHours = game.EstimateCompleteHours,
-                CurrentHours = game.CurrentHours,
-                Completed = game.Completed
+                CurrentHours = game.CurrentHours
             };
         }).ToList();
 

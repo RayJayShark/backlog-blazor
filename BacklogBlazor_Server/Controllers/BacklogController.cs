@@ -42,6 +42,7 @@ public class BacklogController : Controller
             return StatusCode(500, "Error updating backlog");
 
         backlog.Games.ForEach(g => g.BacklogId = backlog.Id);
+        backlog.CompletedGames.ForEach(g => g.BacklogId = backlog.Id);
         success = await _backlogDataService.SaveBacklogItems(backlog);
 
         if (!success)
@@ -86,7 +87,28 @@ public class BacklogController : Controller
                 CompleteAllSeconds = gameData.CompleteAllSeconds,
                 EstimateCompleteHours = g.EstimateCompleteHours,
                 CurrentHours = g.CurrentHours,
-                Completed = g.Completed
+            };
+        }).ToList();
+        
+        backlog.CompletedGames = backlog.CompletedGames.Select(g =>
+        {
+            if (g.CompleteAllSeconds > 0) // Data retrieved from cache
+                return g;
+            
+            var hltbGames = _hltbService.GetGamesFromSearch(g.Name).Result;
+            var gameData = hltbGames.FirstOrDefault(hltbG => hltbG.Id == g.Id);
+            return new Game
+            {
+                Id = g.Id,
+                Name = g.Name,
+                GameImage = gameData.GameImage,
+                Rank = g.Rank,
+                CompleteMainSeconds = gameData.CompleteMainSeconds,
+                CompletePlusSeconds = gameData.CompletePlusSeconds,
+                Complete100Seconds = gameData.Complete100Seconds,
+                CompleteAllSeconds = gameData.CompleteAllSeconds,
+                EstimateCompleteHours = g.EstimateCompleteHours,
+                CurrentHours = g.CurrentHours,
             };
         }).ToList();
 

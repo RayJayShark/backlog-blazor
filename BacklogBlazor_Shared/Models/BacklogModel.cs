@@ -6,6 +6,7 @@ public class BacklogModel
     public string? Name { get; set; }
     public string? Description { get; set; }
     public List<Game> Games { get; set; } = new ();
+    public List<Game> CompletedGames { get; set; } = new ();
     
     // Used by frontend for permissions
     public bool IsOwner { get; set; } = false;

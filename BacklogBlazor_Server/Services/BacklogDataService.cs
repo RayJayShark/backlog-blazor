@@ -95,13 +95,29 @@ public class BacklogDataService
                 transaction);
 
             var rowsAffected = 
-                await _sqlConnection.ExecuteAsync(@"insert into backlog_item (BacklogId, GameId, `Rank`, ItemName, EstimateHoursToComplete, CurrentHours, Completed)
-                                                        values (@backlogId, @id, @rank, @name, @EstimateCompleteHours, @currentHours, @completed)", backlogModel.Games,
+                await _sqlConnection.ExecuteAsync(@"insert into backlog_item (BacklogId, GameId, `Rank`, ItemName, EstimateHoursToComplete, CurrentHours)
+                                                        values (@backlogId, @id, @rank, @name, @EstimateCompleteHours, @currentHours)", backlogModel.Games,
                 transaction);
 
             if (rowsAffected != backlogModel.Games.Count)
             {
                 await transaction.RollbackAsync();
+                _logger.LogError("RowsAffected mismatch on backlog_item\nActual: {RowsAffected}, Expected: {GamesCount}", rowsAffected, backlogModel.Games.Count);
+                return false;
+            }
+            
+            await _sqlConnection.ExecuteAsync("delete from completed_backlog_item where BacklogId = @id", backlogModel, 
+                transaction);
+            
+            rowsAffected = 
+                await _sqlConnection.ExecuteAsync(@"insert into completed_backlog_item (BacklogId, GameId, `Rank`, ItemName, CurrentHours)
+                                                        values (@backlogId, @id, @rank, @name, @currentHours)", backlogModel.CompletedGames,
+                    transaction);
+            
+            if (rowsAffected != backlogModel.CompletedGames.Count)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError("RowsAffected mismatch on backlog_item\nActual: {RowsAffected}, Expected: {GamesCount}", rowsAffected, backlogModel.CompletedGames.Count);
                 return false;
             }
         }
@@ -132,7 +148,6 @@ public class BacklogDataService
                     bi.ItemName as Name, 
                     bi.EstimateHoursToComplete as EstimateCompleteHours, 
                     bi.CurrentHours,
-                    bi.Completed,
                     gc.ImageSource as GameImage,
                     gc.CompleteMainSeconds,
                     gc.CompletePlusSeconds,
@@ -143,7 +158,26 @@ public class BacklogDataService
                 where BacklogId = @backlogId
                 order by `Rank`",
             new { backlogId });
+        
+        var completedGameEnum = await _sqlConnection.QueryAsync<Game>(
+            @"select 
+                    bi.GameId as Id, 
+                    bi.`Rank`, 
+                    bi.ItemName as Name, 
+                    bi.CurrentHours,
+                    gc.ImageSource as GameImage,
+                    gc.CompleteMainSeconds,
+                    gc.CompletePlusSeconds,
+                    gc.Complete100Seconds,
+                    gc.CompleteAllSeconds
+                from completed_backlog_item bi
+                    left join game_cache gc on bi.GameId = gc.GameId                    
+                where BacklogId = @backlogId
+                order by `Rank`",
+            new { backlogId });
+        
         backlog.Games = gameEnum.ToList();
+        backlog.CompletedGames = completedGameEnum.ToList();
 
         await _sqlConnection.CloseAsync();
 
@@ -265,12 +299,16 @@ public class BacklogDataService
             await _sqlConnection.ExecuteAsync("delete from backlog_item where BacklogId = @backlogId",
                 new { backlogId }, tran);
             
+            await _sqlConnection.ExecuteAsync("delete from completed_backlog_item where BacklogId = @backlogId", 
+                new { backlogId }, tran);
+            
             await _sqlConnection.ExecuteAsync("delete from backlog where BacklogId = @backlogId", 
                 new { backlogId }, tran);
 
             var gameBacklogCount = await _sqlConnection.QuerySingleAsync<int>(
                 @"select count(*)  from backlog b 
                         cross join backlog_item bi 
+                        cross join completed_backlog_item cbi
                     where b.BacklogId = @backlogId
                         or bi.BacklogId = @backlogId", new { backlogId }, tran);
 

@@ -15,70 +15,185 @@
         }
     </div>
 
-    <table class="border border-slate-400 border-separate border-spacing-0 bg-slate-50 rounded drop-shadow-md w-full">
-        <thead>
-        <tr class="divide-x divide-slate-400">
-            <th class="border-b border-slate-400 w-6">Rank</th>
-            <th class="border-b border-slate-400 w-1/2 min-w-[400px]">
-                <div class="px-2 flex justify-between items-center">
-                    @if (Backlog.Games.Any())
-                    {
-                        <div>@*This exists to center the heading*@</div>
-                        <span>Game</span>
-                        <button type="button" class="mr-6 my-2" title="Refresh data for all games" disabled="@_disableRefresh"
-                                @onclick="@(() => RefreshGamesData(0, Backlog.Games.ToArray()))">
-                            <HeroIcons @ref="_refreshIcons[0]" Icon="HeroIcons.HeroIcon.ArrowPath_Outline"/>
+    @* Backlog *@
+    @if (HideBacklog)
+    {
+        <div class="flex flex-row justify-between items-center text-xl font-bold border border-slate-400 bg-slate-50 rounded drop-shadow-md w-64 h-14 px-4">
+            <button type="button" @onclick="@(() => HideBacklog = false)">
+                <HeroIcons Icon="HeroIcons.HeroIcon.Chevron_Down"/>
+            </button>
+            <div>Backlog Games</div>
+        </div>
+    }
+    else
+    {
+        <table class="border border-slate-400 border-separate border-spacing-0 bg-slate-50 rounded drop-shadow-md w-full">
+            <thead>
+            <tr>
+                <th colspan="4" class="border-b border-slate-400 w-full">
+                    <div class="flex flex-row justify-between items-center h-14 mx-4">
+                        <button type="button" @onclick="@(() => HideBacklog = true)">
+                            <HeroIcons Icon="HeroIcons.HeroIcon.Chevron_Up"/>
                         </button>
-                    }
-                    else
-                    {
-                        <span>Game</span>
-                    }
-                </div>
-            </th>
-            <th class="border-b border-slate-400 w-1/6">Estimated Hours</th>
-            <th class="border-b border-slate-400 w-1/6">Current Hours</th>
-            <th class="border-b border-slate-400 w-6">Completed?</th>
+                        <div>
+                            Backlog Games
+                        </div>
+                        <div>@*This exists to center the heading*@</div>
+                    </div>
+                </th>
+            </tr>
+            <tr class="divide-x divide-slate-400">
+                <th class="border-b border-slate-400 w-6">Rank</th>
+                <th class="border-b border-slate-400 w-7/12 min-w-[400px]">
+                    <div class="px-2 flex justify-between items-center">
+                        @if (Backlog.Games.Any())
+                        {
+                            <div>@*This exists to center the heading*@</div>
+                            <span>Game</span>
+                            <button type="button" class="mr-6 my-2" title="Refresh data for all games" disabled="@_disableRefresh"
+                                    @onclick="@(() => RefreshGamesData(0, Backlog.Games.ToArray()))">
+                                <HeroIcons @ref="_refreshIcons[0]" Icon="HeroIcons.HeroIcon.ArrowPath_Outline"/>
+                            </button>
+                        }
+                        else
+                        {
+                            <span>Game</span>
+                        }
+                    </div>
+                </th>
+                <th class="border-b border-slate-400 w-1/6">Estimated Hours</th>
+                <th class="border-b border-slate-400 w-1/6">Current Hours</th>
+            </tr>
+            </thead>
+            <tbody>
+            @if (!Backlog.Games.Any())
+            {
+                <tr>
+                    <td colspan="5">This backlog is empty...</td>
+                </tr>
+            }
+            @foreach (var game in Backlog.Games)
+            {
+                <tr class="divide-x divide-slate-400">
+                    <td class="border-b border-slate-400 text-center font-bold">@game.Rank</td>
+                    <td class="border-b border-slate-400 px-2 py-1">
+                        <div class="flex justify-between">
+                            <BacklogGame Game="game"/>
+                            <button type="button" class="mr-6" title="Refresh game data" disabled="@_disableRefresh"
+                                    @onclick="@(() => RefreshGamesData(game.Rank, game))">
+                                <HeroIcons @ref="_refreshIcons[game.Rank]" Icon="HeroIcons.HeroIcon.ArrowPath_Outline"/>
+                            </button>
+                        </div>
+                    </td>
+                    <td class="border-b border-slate-400 text-center font-bold">
+                        @game.EstimateCompleteHours
+                    </td>
+                    <td class="border-b border-slate-400 text-center font-bold">
+                        @game.CurrentHours
+                    </td>
+                </tr>
+            }
+            </tbody>
+            <tfoot>
+            <tr class="divide-x divide-slate-400">
+                <td class="font-bold text-center">Totals</td>
+                <td class="font-bold text-center">@Backlog.Games.Count Games</td>
+                <td class="font-bold text-center">@Backlog.Games.Sum(g => g.EstimateCompleteHours).ToString("0.0")</td>
+                <td class="font-bold text-center">@Backlog.Games.Sum(g => g.CurrentHours).ToString("0.0")</td>
+            </tr>
+            </tfoot>
+        </table>
+    }
+    
+    @* Completed Games *@
+    @if (Backlog.CompletedGames.Any())
+    {
+        @if (HideCompleted)
+        {
+            <div class="flex flex-row justify-between items-center text-xl font-bold border border-slate-400 bg-slate-50 rounded drop-shadow-md w-64 h-14 mt-6 px-4">
+                <button type="button" @onclick="@(() => HideCompleted = false)">
+                    <HeroIcons Icon="HeroIcons.HeroIcon.Chevron_Down"/>
+                </button>
+                <div>Completed Games</div>
+            </div>
+        }
+        else
+        {
+            <table class="border border-slate-400 border-separate border-spacing-0 bg-slate-50 rounded drop-shadow-md w-2/3 mt-6">
+                <thead>
+                <tr>
+                    <th colspan="2" class="border-b border-slate-400 w-full">
+                        <div class="flex flex-row justify-between items-center text-xl h-14 mx-4">
+                            <button type="button" @onclick="@(() => HideCompleted = true)">
+                                <HeroIcons Icon="HeroIcons.HeroIcon.Chevron_Up"/>
+                            </button>
+                            <div>
+                                Completed Games
+                            </div>
+                            <div>@*This exists to center the heading*@</div>
+                        </div>
+                    </th>
+                </tr>
+                <tr class="divide-x divide-slate-400">
+                    <th class="border-b border-slate-400 w-1/2 min-w-[400px]">
+                        <div class="px-2 flex justify-between items-center">
+                            <div>@*This exists to center the heading*@</div>
+                            <span>Game</span>
+                            <button type="button" class="mr-6 my-2" title="Refresh data for all games" disabled="@_disableRefresh"
+                                    @onclick="@(() => RefreshGamesData(Backlog.Games.Count + 1, Backlog.CompletedGames.ToArray()))">
+                                <HeroIcons @ref="@(_refreshIcons[Backlog.Games.Count + 1])" Icon="HeroIcons.HeroIcon.ArrowPath_Outline"/>
+                            </button>
+                        </div>
+                    </th>
+                    <th class="border-b border-slate-400 w-1/6">Current Hours</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var game in Backlog.CompletedGames)
+                {
+                    <tr class="divide-x divide-slate-400">
+                        <td class="border-b border-slate-400 px-2 py-1">
+                            <div class="flex justify-between">
+                                <BacklogGame Game="game"/>
+                                <button type="button" class="mr-6" title="Refresh game data" disabled="@_disableRefresh"
+                                        @onclick="@(() => RefreshGamesData(Backlog.Games.Count + Backlog.CompletedGames.IndexOf(game) + 2, game))">
+                                    <HeroIcons @ref="@(_refreshIcons[Backlog.Games.Count + Backlog.CompletedGames.IndexOf(game) + 2])" Icon="HeroIcons.HeroIcon.ArrowPath_Outline"/>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="border-b border-slate-400 text-center font-bold">
+                            @game.CurrentHours
+                        </td>
+                    </tr>
+                }
+                </tbody>
+                <tfoot>
+                <tr class="divide-x divide-slate-400">
+                    <td class="font-bold text-center">@Backlog.CompletedGames.Count Games</td>
+                    <td class="font-bold text-center">@Backlog.CompletedGames.Sum(g => g.CurrentHours).ToString("0.0")</td>
+                </tr>
+                </tfoot>
+            </table>
+        }
+    }
+    
+    <table class="border border-slate-400 border-separate border-spacing-0 bg-slate-50 rounded drop-shadow-md mt-6 w-1/2">
+        <thead>
+        <tr>
+            <th colspan="3" class="border-b border-slate-400 w-full">Totals</th>
+        </tr>
+        <tr class="divide-x divide-slate-400">
+            <th>Games</th>
+            <th>Estimated Hours</th>
+            <th>Current Hours</th>
         </tr>
         </thead>
         <tbody>
-        @if (!Backlog.Games.Any())
-        {
-            <tr>
-                <td colspan="5">This backlog is empty...</td>
-            </tr>
-        }
-        @foreach (var game in Backlog.Games)
-        {
-            <tr class="divide-x divide-slate-400">
-                <td class="border-b border-slate-400 text-center font-bold">@game.Rank</td>
-                <td class="border-b border-slate-400 px-2 py-1">
-                    <div class="flex justify-between">
-                        <BacklogGame Game="game"/>
-                        <button type="button" class="mr-6" title="Refresh game data" disabled="@_disableRefresh"
-                                @onclick="@(() => RefreshGamesData(game.Rank, game))">
-                            <HeroIcons @ref="_refreshIcons[game.Rank]" Icon="HeroIcons.HeroIcon.ArrowPath_Outline"/>
-                        </button>
-                    </div>
-                </td>
-                <td class="border-b border-slate-400 text-center font-bold">
-                    @game.EstimateCompleteHours
-                </td>
-                <td class="border-b border-slate-400 text-center font-bold">
-                    @game.CurrentHours
-                </td>
-                <td class="border-b border-slate-400 text-center font-bold"><InputCheckbox disabled="true" @bind-Value="@game.Completed"/></td>
-            </tr>
-        }
-        </tbody>
-        <tfoot>
         <tr class="divide-x divide-slate-400">
-            <td class="font-bold text-center">Totals</td>
-            <td class="font-bold text-center">@Backlog.Games.Count Games</td>
+            <td class="font-bold text-center">@(Backlog.Games.Count + Backlog.CompletedGames.Count)</td>
             <td class="font-bold text-center">@Backlog.Games.Sum(g => g.EstimateCompleteHours).ToString("0.0")</td>
-            <td class="font-bold text-center">@Backlog.Games.Sum(g => g.CurrentHours).ToString("0.0")</td>
-            <td class="font-bold text-center" title="Completed/Total">@Backlog.Games.Count(g => g.Completed)/@Backlog.Games.Count</td>
+            <td class="font-bold text-center">@((Backlog.Games.Sum(g => g.CurrentHours) + Backlog.CompletedGames.Sum(g => g.CurrentHours)).ToString("0.0"))</td>
         </tr>
-        </tfoot>
+        </tbody>
     </table>
 </div>

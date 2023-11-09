@@ -33,7 +33,7 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(cors => cors.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
 
-builder.Services.AddAuthentication().AddJwtBearer(options =>
+builder.Services.AddAuthentication("Bearer").AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
     {

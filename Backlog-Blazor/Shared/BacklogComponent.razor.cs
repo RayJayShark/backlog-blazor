@@ -18,6 +18,12 @@ public partial class BacklogComponent : ComponentBase
 
     [Parameter] 
     public string Class { get; set; }
+
+    [Parameter] 
+    public bool HideBacklog { get; set; } = false;
+
+    [Parameter]
+    public bool HideCompleted { get; set; } = true;
     
     [Inject] private HttpClient HttpClient { get; set; }
     [Inject] private NotificationService NotificationService { get; set; }
@@ -27,7 +33,7 @@ public partial class BacklogComponent : ComponentBase
 
     protected override void OnInitialized()
     {
-        _refreshIcons = new HeroIcons[Backlog.Games.Count + 1];
+        _refreshIcons = new HeroIcons[Backlog.Games.Count + Backlog.CompletedGames.Count + 2];
     }
 
     private async Task RefreshGamesData(int iconToSpin, params Game[] games)
@@ -43,8 +49,17 @@ public partial class BacklogComponent : ComponentBase
 
             foreach (var game in updatedGames)
             {
+                // Find the game in the lists and update
                 var index = Backlog.Games.FindIndex(g => g.Id == game.Id);
-                Backlog.Games[index] = game;
+                if (index >= 0)
+                {
+                    Backlog.Games[index] = game;
+                }
+                else
+                {
+                    index = Backlog.CompletedGames.FindIndex(g => g.Id == game.Id);
+                    Backlog.CompletedGames[index] = game;
+                }
             }
         }
         catch (HttpRequestException ex)

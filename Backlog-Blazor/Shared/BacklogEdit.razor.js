@@ -159,3 +159,28 @@ export let SetupDropItem = (instance, method) => {
     pageInstance = instance;
     pageMethod = method;
 }
+
+// Logic for spinning the refresh icons
+export const SpinRefreshIcon = (iconToSpin) => {
+    let parent = document.getElementById(iconToSpin);
+    let refreshIcon;
+    if (parent) {
+        refreshIcon = parent.firstElementChild;
+    }
+
+    if (refreshIcon && !refreshIcon.classList.contains("animate-spin")) {
+        refreshIcon.classList.add("animate-spin");
+    }
+}
+
+export const StopSpinRefreshIcon = (iconToSpin) => {
+    let parent = document.getElementById(iconToSpin);
+    let refreshIcon;
+    if (parent) {
+        refreshIcon = parent.firstElementChild;
+    }
+
+    if (refreshIcon) {
+        refreshIcon.classList.remove("animate-spin");
+    }
+}

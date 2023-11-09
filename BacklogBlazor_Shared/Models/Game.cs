@@ -49,5 +49,4 @@ public class Game
     public TimeSpan CompleteAllTime { get; set; }
     public double EstimateCompleteHours { get; set; }
     public double CurrentHours { get; set; }
-    public bool Completed { get; set; }
 }
