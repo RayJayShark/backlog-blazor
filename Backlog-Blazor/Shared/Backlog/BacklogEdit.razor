@@ -90,7 +90,7 @@
                             }
                             else
                             {
-                                <BlazoredTypeahead TItem="@Game" TValue="@Game" @bind-Value="@game.Game" SearchMethod="@(searchText => SearchForGames(searchText, game.Game.Rank))"
+                                <BlazoredTypeahead TItem="@Game" TValue="@Game" Value="@game.Game" ValueChanged="@(newGame => UpdateGame(newGame, game))" ValueExpression="@(() => game.Game)" SearchMethod="@(searchText => SearchForGames(searchText, game.Game.Rank))"
                                                    Debounce="500" placeholder="Search for a game..." DisableClear="true">
                                     <SelectedTemplate Context="select_context">
                                         @if (game.Game.Id < 0)

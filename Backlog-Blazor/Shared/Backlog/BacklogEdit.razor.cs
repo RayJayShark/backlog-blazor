@@ -1,16 +1,15 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Web;
 using BacklogBlazor_Shared.Models;
-using BacklogBlazor.Icons;
 using BacklogBlazor.Models;
 using BacklogBlazor.Services;
+using Blazored.Modal;
+using Blazored.Modal.Services;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 
-namespace BacklogBlazor.Shared;
+namespace BacklogBlazor.Shared.Backlog;
 
 public partial class BacklogEdit : ComponentBase
 {
@@ -38,13 +37,15 @@ public partial class BacklogEdit : ComponentBase
 
     [Parameter] 
     public bool HideCompleted { get; set; } = true;
+    
+    [CascadingParameter] public IModalService Modal { get; set; } = default!;
 
     [Inject] private HttpClient HttpClient { get; set; }
     [Inject] private AuthorizedApiService AuthorizedApiService { get; set; }
     [Inject] private NotificationService NotificationService { get; set; }
     [Inject] private NavigationManager Nav { get; set; }
     [Inject] private IJSRuntime JsRuntime { get; set; }
-
+    
     private event Action BacklogChanged;
     private List<TypeaheadGame> _typeaheadGames = new();
     private bool _disableSave = false;
@@ -60,7 +61,7 @@ public partial class BacklogEdit : ComponentBase
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         _jsModule = await JsRuntime.InvokeAsync<IJSObjectReference>(
-            "import", "./Shared/BacklogEdit.razor.js");
+            "import", "./Shared/Backlog/BacklogEdit.razor.js");
         await _jsModule.InvokeVoidAsync("SetupDragging");
         await _jsModule.InvokeAsync<object>("SetupDropItem", DotNetObjectReference.Create(this), "DropItem").ConfigureAwait(false);
     }
@@ -187,6 +188,27 @@ public partial class BacklogEdit : ComponentBase
          {
              _typeaheadGames[i].Game.Rank--;
          }
+    }
+
+    private async Task UpdateGame(Game newGame, TypeaheadGame gameToUpdate)
+    {
+        if (_typeaheadGames.Any(g => g.Game.Id == newGame.Id))
+        {
+            var parameters = new ModalParameters()
+                .Add(nameof(DuplicateGameConfirm.Message), newGame.Name);
+            var options = new ModalOptions
+            {
+                HideHeader = true,
+                Position = ModalPosition.Middle
+            };
+            var duplicateModal = Modal.Show<DuplicateGameConfirm>(parameters, options);
+            var result = await duplicateModal.Result;
+
+            if (result.Cancelled)
+                return;
+        }
+        
+        gameToUpdate.Game = newGame;
     }
 
     private async Task SaveBacklog()

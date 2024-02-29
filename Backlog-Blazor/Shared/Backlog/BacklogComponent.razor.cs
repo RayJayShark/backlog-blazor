@@ -4,9 +4,8 @@ using BacklogBlazor_Shared.Models;
 using BacklogBlazor.Icons;
 using BacklogBlazor.Services;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Web;
 
-namespace BacklogBlazor.Shared;
+namespace BacklogBlazor.Shared.Backlog;
 
 public partial class BacklogComponent : ComponentBase
 {

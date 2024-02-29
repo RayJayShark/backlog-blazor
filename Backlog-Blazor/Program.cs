@@ -4,6 +4,7 @@ using BacklogBlazor;
 using BacklogBlazor.Services;
 using Blazored.LocalStorage;
 using Blazored.SessionStorage;
+using Blazored.Modal;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -16,6 +17,7 @@ builder.Services.AddScoped<NotificationService>();
 
 builder.Services.AddBlazoredSessionStorage();
 builder.Services.AddBlazoredLocalStorage();
+builder.Services.AddBlazoredModal();
 
 // Add AuthorizedApiService
 var serviceProvider = builder.Services.BuildServiceProvider();

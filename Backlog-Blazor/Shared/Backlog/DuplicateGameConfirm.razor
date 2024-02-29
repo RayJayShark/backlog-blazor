@@ -1,0 +1,26 @@
+﻿
+<div>
+    @if (string.IsNullOrWhiteSpace(Message))
+    {
+        <div class="text-lg font-semibold">This game is already in this backlog.</div>
+    }
+    else
+    {
+        <div class="text-lg font-semibold">@Message is already in this backlog.</div>
+    }
+    <div class="text-lg">Are you sure you want to add it?</div>
+
+    <div class="mt-2 text-right">
+        <button type="button" @onclick="Yes" class="mt-2 py-1 px-2 text-white font-bold drop-shadow-md bg-amber-600 rounded-lg">Yes</button>
+        <button type="button" @onclick="No" class="mt-2 ml-2 py-1 px-2 font-semibold drop-shadow-md border border-slate-500 rounded-lg">No</button>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; } = default!;
+
+    [Parameter] public string? Message { get; set; }
+
+    private async Task Yes() => await BlazoredModal.CloseAsync(ModalResult.Ok());
+    private async Task No() => await BlazoredModal.CloseAsync(ModalResult.Cancel());
+}
