@@ -1,17 +1,13 @@
 using System.Text;
-using System.Timers;
 using BacklogBlazor_Server.Services;
-using Dapper;
 using dotenv.net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
-using MySqlConnector;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
 using NLog.Web;
 using LogLevel = NLog.LogLevel;
-using Timer = System.Timers.Timer;
 
 DotEnv.Load(options: new DotEnvOptions(ignoreExceptions: false));
 ConfigureNLog();
@@ -94,13 +90,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Keep the database alive
-var keepAliveTimer = new Timer();
-keepAliveTimer.Interval = 24 * 60 * 60 * 1000; // Once a day
-keepAliveTimer.Elapsed += KeepDatabaseAlive;
-keepAliveTimer.Start();
-
 app.Run();
+
 
 
 static void ConfigureNLog()
@@ -125,30 +116,4 @@ static void ConfigureNLog()
     config.AddRule(LogLevel.Info, LogLevel.Fatal, logConsole);
     
     LogManager.Configuration = config;
-}
-
-static void KeepDatabaseAlive(object? obj, ElapsedEventArgs args)
-{
-    MySqlTransaction? tran = null;
-    
-    try
-    {
-        Console.WriteLine("Sending database keep alive");
-        
-        using var sqlConnection = new MySqlConnection(Environment.GetEnvironmentVariable("SQL_CONN"));
-        sqlConnection.Open();
-
-        tran = sqlConnection.BeginTransaction();
-        sqlConnection.Execute(
-            "insert into game_cache (GameId, CompleteMainSeconds, CompletePlusSeconds, Complete100Seconds, CompleteAllSeconds)\nvalues (-1, 0, 0, 0, 0)", transaction: tran);
-        sqlConnection.Execute("delete from game_cache where GameId = -1", transaction: tran);
-        tran.Commit();
-        
-        Console.WriteLine("Database kept alive");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error while keeping database alive: {ex}\n\t{ex.Message}");
-        tran?.Rollback();
-    }
 }
