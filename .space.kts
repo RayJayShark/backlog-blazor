@@ -5,7 +5,7 @@
 */
 
 job("Build") {
-	container(displayName = "Build Solution", image = "mcr.microsoft.com/dotnet/sdk:7.0.102-jammy-amd64") {
+	container(displayName = "Build Solution", image = "mcr.microsoft.com/dotnet/sdk:8.0") {
 
     	shellScript {
   			content = """
@@ -34,7 +34,7 @@ job ("Deploy") {
     }
 
   
-    container(displayName = "Build Solution", image = "mcr.microsoft.com/dotnet/sdk:7.0.102-jammy-amd64") {
+    container(displayName = "Build Solution", image = "mcr.microsoft.com/dotnet/sdk:8.0") {
 
     	shellScript {
   			content = """

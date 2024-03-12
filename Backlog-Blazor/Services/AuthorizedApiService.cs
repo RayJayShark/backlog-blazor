@@ -48,7 +48,15 @@ public class AuthorizedApiService
             && !string.IsNullOrWhiteSpace(tokenModel.RefreshToken))
         {
             // No supported way to await this. Cross your fingers for no race condition!
-            await RefreshJwtToken();
+            try
+            {
+                await RefreshJwtToken();
+            }
+            catch (HttpRequestException ex)
+            {
+                // Remove token to take it to take user to login page
+                User.AuthToken = new JwtSecurityToken();
+            }
         }
 
         if (!User.IsAuthenticated)
