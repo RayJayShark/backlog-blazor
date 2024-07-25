@@ -14,7 +14,7 @@ public class HltbService
         _httpClient = new HttpClient();
         _httpClient.BaseAddress = new Uri("https://howlongtobeat.com/api/");
         _httpClient.DefaultRequestHeaders.Referrer = new Uri("https://howlongtobeat.com/");
-        _httpClient.DefaultRequestHeaders.UserAgent.Add(ProductInfoHeaderValue.Parse("Other"));
+        _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0");
     }
 
     public async Task<List<Game>> GetGamesFromSearch(string searchText)
@@ -53,7 +53,7 @@ public class HltbService
             }
         };
 
-        var response = await _httpClient.PostAsJsonAsync("search", search);
+        var response = await _httpClient.PostAsJsonAsync("find", search);
 
         if (!response.IsSuccessStatusCode)
         {

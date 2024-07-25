@@ -22,9 +22,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddScoped<AuthDataService>(_ => new AuthDataService(Environment.GetEnvironmentVariable("SQL_CONN")));
-builder.Services.AddScoped<BacklogDataService>(_ => new BacklogDataService(Environment.GetEnvironmentVariable("SQL_CONN")));
-builder.Services.AddScoped<UserDataService>(_ => new UserDataService(Environment.GetEnvironmentVariable("SQL_CONN")));
+builder.Services.AddScoped<AuthDataService>(s => new AuthDataService(s.GetService<ILogger<AuthDataService>>(), Environment.GetEnvironmentVariable("SQL_CONN")));
+builder.Services.AddScoped<BacklogDataService>(s => new BacklogDataService(s.GetService<ILogger<BacklogDataService>>(), Environment.GetEnvironmentVariable("SQL_CONN")));
+builder.Services.AddScoped<UserDataService>(s => new UserDataService(s.GetService<ILogger<UserDataService>>(), Environment.GetEnvironmentVariable("SQL_CONN")));
 builder.Services.AddSingleton<HltbService>();
 builder.Services.AddSingleton<ThirdPartyService>();
 

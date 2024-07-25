@@ -7,10 +7,11 @@ namespace BacklogBlazor_Server.Services;
 public class UserDataService
 {
     private MySqlConnection _sqlConnection;
-    [Inject] private ILogger<AuthDataService> _logger { get; set; }
+    private ILogger<UserDataService> _logger { get; set; }
     
-    public UserDataService(string connectionString)
+    public UserDataService(ILogger<UserDataService> logger, string connectionString)
     {
+        _logger = logger;
         _sqlConnection = new MySqlConnection(connectionString);
 
         TestConnection();
