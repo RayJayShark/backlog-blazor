@@ -53,7 +53,7 @@ public class HltbService
             }
         };
 
-        var response = await _httpClient.PostAsJsonAsync("find", search);
+        var response = await _httpClient.PostAsJsonAsync("search", search);
 
         if (!response.IsSuccessStatusCode)
         {
