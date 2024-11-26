@@ -112,13 +112,13 @@ public class HltbService
         
         // Find the API key
         var jsFile = await jsResponse.Content.ReadAsStringAsync();
-        var apiKeyMatch = Regex.Match(jsFile, "\\/api\\/(?:search|find)\\/\".concat\\(\"([a-zA-Z0-9]+)\"\\)");
+        var apiKeyMatch = Regex.Match(jsFile, """\/api\/(?:search|find)\/"\.concat\("([a-zA-Z0-9]+)"\)\.concat\("([a-zA-Z0-9]+)"\)""");
         if (!apiKeyMatch.Success)
         {
             _logger.LogWarning("Could not find API key in JavaScript file");
             return string.Empty;
         }
 
-        return apiKeyMatch.Groups[1].Value;
+        return apiKeyMatch.Groups[1].Value + apiKeyMatch.Groups[2].Value;
     }
 }
