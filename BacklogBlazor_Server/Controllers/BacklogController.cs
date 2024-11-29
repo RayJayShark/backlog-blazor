@@ -101,12 +101,12 @@ public class BacklogController : Controller
             {
                 Id = g.Id,
                 Name = g.Name,
-                GameImage = gameData.GameImage,
+                GameImage = gameData?.GameImage ?? string.Empty,
                 Rank = g.Rank,
-                CompleteMainSeconds = gameData.CompleteMainSeconds,
-                CompletePlusSeconds = gameData.CompletePlusSeconds,
-                Complete100Seconds = gameData.Complete100Seconds,
-                CompleteAllSeconds = gameData.CompleteAllSeconds,
+                CompleteMainSeconds = gameData?.CompleteMainSeconds ?? 0,
+                CompletePlusSeconds = gameData?.CompletePlusSeconds ?? 0,
+                Complete100Seconds = gameData?.Complete100Seconds ?? 0,
+                CompleteAllSeconds = gameData?.CompleteAllSeconds ?? 0,
                 EstimateCompleteHours = g.EstimateCompleteHours,
                 CurrentHours = g.CurrentHours,
             };
