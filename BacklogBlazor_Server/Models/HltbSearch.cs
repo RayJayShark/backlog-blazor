@@ -40,7 +40,7 @@ public class HltbSearchGameplay
     public string Perspective { get; set; }
     public string Flow { get; set; }
     public string Genre { get; set; }
-    public string SubGenre { get; set; } = " "; // This is required to be an empty space or the API 404s
+    public string SubGenre { get; set; } = ""; // This is required to be an empty string or the API 404s
 }
 
 public class HltbSearchUsers
