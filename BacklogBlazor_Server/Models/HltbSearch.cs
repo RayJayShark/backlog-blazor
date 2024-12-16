@@ -41,6 +41,7 @@ public class HltbSearchGameplay
     public string Flow { get; set; }
     public string Genre { get; set; }
     public string SubGenre { get; set; } = ""; // This is required to be an empty string or the API 404s
+    public string Difficulty { get; set; } = "";
 }
 
 public class HltbSearchUsers

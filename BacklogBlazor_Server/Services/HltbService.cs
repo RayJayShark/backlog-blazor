@@ -65,7 +65,7 @@ public class HltbService
         // Try /find instead of /search
         if (!response.IsSuccessStatusCode)
         {
-            response = await _httpClient.PostAsJsonAsync("api/find/" + GetApiKey(), search);
+            response = await _httpClient.PostAsJsonAsync($"api/find/{apiKey}", search);
         }
         
         if (!response.IsSuccessStatusCode)
