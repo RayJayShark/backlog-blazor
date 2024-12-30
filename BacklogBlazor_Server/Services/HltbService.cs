@@ -59,14 +59,8 @@ public class HltbService
             }
         };
 
-        var apiKey = await GetApiKey();
-        var response = await _httpClient.PostAsJsonAsync($"api/search/{apiKey}", search);
-
-        // Try /find instead of /search
-        if (!response.IsSuccessStatusCode)
-        {
-            response = await _httpClient.PostAsJsonAsync($"api/find/{apiKey}", search);
-        }
+        var endpoint = await GetEndpoint();
+        var response = await _httpClient.PostAsJsonAsync($"api/{endpoint}", search);
         
         if (!response.IsSuccessStatusCode)
         {
@@ -82,7 +76,7 @@ public class HltbService
     /// Gets the key/hash/whatever that is appended to the end of the search endpoint
     /// </summary>
     /// <returns>API key</returns>
-    private async Task<string> GetApiKey()
+    private async Task<string> GetEndpoint()
     {
         // Get base HTML
         var baseResponse = await _httpClient.GetAsync("");
@@ -97,7 +91,7 @@ public class HltbService
         var jsFileMatch = Regex.Match(html, "src=\"(\\/[\\w\\/]+\\/_app-[a-z0-9]+\\.js)\"");
         if (!jsFileMatch.Success)
         {
-            _logger.LogWarning("Could not find _app script in HTML");
+            _logger.LogError("Could not find _app script in HTML");
             return string.Empty;
         }
 
@@ -106,19 +100,19 @@ public class HltbService
         var jsResponse = await _httpClient.GetAsync(jsFileLocation);
         if (!jsResponse.IsSuccessStatusCode)
         {
-            _logger.LogWarning("Failed to call JS file URL: {JsFile}", jsFileLocation);
+            _logger.LogError("Failed to call JS file URL: {JsFile}", jsFileLocation);
             return string.Empty;
         }
         
         // Find the API key
         var jsFile = await jsResponse.Content.ReadAsStringAsync();
-        var apiKeyMatch = Regex.Match(jsFile, """\/api\/(?:search|find)\/"\.concat\("([a-zA-Z0-9]+)"\)\.concat\("([a-zA-Z0-9]+)"\)""");
+        var apiKeyMatch = Regex.Match(jsFile, """\/api\/(search|find|lookup)\/"\.concat\("([a-zA-Z0-9]+)"\)\.concat\("([a-zA-Z0-9]+)"\)""");
         if (!apiKeyMatch.Success)
         {
-            _logger.LogWarning("Could not find API key in JavaScript file");
+            _logger.LogError("Could not find API key in JavaScript file");
             return string.Empty;
         }
 
-        return apiKeyMatch.Groups[1].Value + apiKeyMatch.Groups[2].Value;
+        return apiKeyMatch.Groups[1].Value + "/" + apiKeyMatch.Groups[2].Value + apiKeyMatch.Groups[3].Value;
     }
 }
