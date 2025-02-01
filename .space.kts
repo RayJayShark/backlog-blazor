@@ -40,7 +40,7 @@ job ("Deploy") {
     	shellScript {
   			content = """
 				cd Backlog-Blazor
-    			wget -O tailwindcss https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64
+    			wget -O tailwindcss https://github.com/tailwindlabs/tailwindcss/releases/download/v3.4.1/tailwindcss-linux-x64
           		chmod +x tailwindcss
     			dotnet publish -o ${'$'}JB_SPACE_FILE_SHARE_PATH/Backlog-Blazor/build -c Release -r linux-x64 --self-contained
        			cd ../BacklogBlazor_Server
